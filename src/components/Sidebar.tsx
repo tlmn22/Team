@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '@/app/login/actions';
@@ -66,14 +67,8 @@ export default function Sidebar({
         }`}
       >
         <aside className="h-full bg-slate-800 flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🏆</span>
-              <div>
-                <p className="text-white font-bold text-sm leading-tight">Sport Manager</p>
-                <p className="text-slate-400 text-xs">Багийн менежментийн систем</p>
-              </div>
-            </div>
+          <div className="flex items-center justify-between px-4 py-4 bg-black border-b border-slate-700">
+            <Image src="/logo.png" alt="HoopsLab" width={180} height={61} priority className="h-auto w-[168px]" />
             <button
               onClick={() => setMobileOpen(false)}
               className="lg:hidden text-slate-400 hover:text-white p-1"
@@ -165,9 +160,10 @@ export default function Sidebar({
       <div className="lg:hidden fixed top-0 inset-x-0 z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
         <button
           onClick={() => setMobileOpen(true)}
-          className="font-bold text-orange-600 text-sm flex items-center gap-1.5"
+          className="font-bold text-gray-900 text-sm flex items-center gap-2"
         >
-          🏆 Sport Manager
+          <Image src="/icon.png" alt="" width={28} height={28} className="rounded-lg" />
+          Hoops<span className="text-orange-600">Lab</span>
         </button>
         <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
           {initial}

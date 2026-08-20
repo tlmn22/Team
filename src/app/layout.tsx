@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Sport Manager',
-  description: 'Багийн менежментийн систем',
+  title: 'HoopsLab',
+  description: 'Data. Analyze. Elevate. — Багийн менежментийн систем',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
