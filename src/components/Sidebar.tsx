@@ -7,12 +7,12 @@ import { logout } from '@/app/login/actions';
 import TeamSwitcher from '@/components/TeamSwitcher';
 import { IconLogout } from '@/components/icons';
 import type { MyTeam } from '@/lib/auth';
-import type { ComponentType, SVGProps } from 'react';
+import type { ReactNode } from 'react';
 
 export interface NavItem {
   href: string;
   label: string;
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  icon: ReactNode;
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -129,7 +129,6 @@ export default function Sidebar({
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + '/');
-              const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
@@ -141,7 +140,7 @@ export default function Sidebar({
                       : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                   }`}
                 >
-                  <Icon className="w-[18px] h-[18px]" />
+                  {item.icon}
                   {item.label}
                 </Link>
               );
