@@ -92,8 +92,13 @@ export default function TeamsManager({
           {teams.map((team) => (
             <div key={team.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
               <div className="flex items-start gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 font-bold text-sm flex-shrink-0">
-                  {team.name.slice(0, 1).toUpperCase()}
+                <div className="w-10 h-10 rounded-xl bg-green-50 overflow-hidden flex items-center justify-center text-green-600 font-bold text-sm flex-shrink-0">
+                  {team.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={team.logo_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    team.name.slice(0, 1).toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-gray-900 text-sm truncate">{team.name}</p>
