@@ -106,12 +106,15 @@ export const myRoleInTeam = cache(async (teamId: number): Promise<TeamRole | 'co
     .maybeSingle();
   if (direct) return direct.role as TeamRole;
 
+  const { data: team } = await admin.from('teams').select('club_id').eq('id', teamId).maybeSingle();
+  if (!team) return null;
+
   const { data: managed } = await admin
-    .from('teams')
-    .select('club_id, club_members:club_members!inner(role, user_id)')
-    .eq('id', teamId)
-    .eq('club_members.user_id', user.id)
-    .eq('club_members.role', 'manager')
+    .from('club_members')
+    .select('role')
+    .eq('club_id', team.club_id)
+    .eq('user_id', user.id)
+    .eq('role', 'manager')
     .maybeSingle();
 
   return managed ? 'coach' : null;

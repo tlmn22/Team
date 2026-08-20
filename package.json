@@ -9,9 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-react": "^11.2.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
+    "ckeditor5": "^48.4.0",
     "file-type": "^22.0.2",
+    "isomorphic-dompurify": "^3.19.0",
     "next": "16.3.1",
     "next-intl": "^4.13.7",
     "react": "19.2.8",

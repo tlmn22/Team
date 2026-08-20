@@ -3,3 +3,26 @@
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
+
+.rich-text-editor .ck.ck-editor__editable {
+  min-height: 120px;
+  padding: 0.5rem 0.75rem;
+}
+.rich-text-editor .ck.ck-toolbar {
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+}
+.rich-text-editor .ck.ck-editor__main > .ck-editor__editable {
+  border: 0;
+}
+
+.rich-text-content :where(ul, ol) {
+  list-style: revert;
+  margin: revert;
+  padding: revert;
+}
+.rich-text-content a {
+  color: var(--color-orange-600);
+  text-decoration: underline;
+}
