@@ -1,7 +1,12 @@
-import { requireUser } from '@/lib/auth';
-import ComingSoon from '@/components/ComingSoon';
+import { redirect } from 'next/navigation';
+import { requireUser, isSuperAdmin } from '@/lib/auth';
+import { listUsers } from '@/lib/actions/users';
+import UsersManager from '@/components/users/UsersManager';
 
 export default async function UsersPage() {
   await requireUser();
-  return <ComingSoon title="Хэрэглэгчид" />;
+  if (!(await isSuperAdmin())) redirect('/dashboard');
+
+  const users = await listUsers();
+  return <UsersManager users={users} />;
 }
