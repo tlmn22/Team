@@ -1,7 +1,19 @@
-import { requireUser } from '@/lib/auth';
-import ComingSoon from '@/components/ComingSoon';
+import { requireUser, getCurrentTeamId, getMyTeams, canManageTeam } from '@/lib/auth';
+import { listTeamMembers } from '@/lib/actions/members';
+import NoTeamSelected from '@/components/NoTeamSelected';
+import MembersManager from '@/components/members/MembersManager';
 
 export default async function MembersPage() {
   await requireUser();
-  return <ComingSoon title="Гишүүд" />;
+  const teamId = await getCurrentTeamId();
+
+  if (!teamId) {
+    const teams = await getMyTeams();
+    return <NoTeamSelected teams={teams} />;
+  }
+
+  const canManage = await canManageTeam(teamId);
+  const members = await listTeamMembers(teamId);
+
+  return <MembersManager teamId={teamId} members={members} canManage={canManage} />;
 }
