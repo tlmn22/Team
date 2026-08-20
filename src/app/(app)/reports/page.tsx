@@ -70,9 +70,11 @@ export default async function ReportsPage() {
   };
 
   return (
-    <div>
-      <h1 className="text-xl font-bold text-slate-900 mb-6">Тайлан</h1>
-      <ReportsTabs attendance={attendance} players={players} content={content} />
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Тайлан</h1>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <ReportsTabs attendance={attendance} players={players} content={content} />
+      </div>
     </div>
   );
 }

@@ -7,9 +7,11 @@ import type { MyTeam } from '@/lib/auth';
 export default function TeamSwitcher({
   teams,
   currentTeamId,
+  dark = false,
 }: {
   teams: MyTeam[];
   currentTeamId: number | null;
+  dark?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -17,7 +19,9 @@ export default function TeamSwitcher({
 
   return (
     <select
-      className="w-full text-xs border border-slate-200 rounded-md px-2 py-1.5 mt-2 bg-white disabled:opacity-50"
+      className={`w-full text-sm rounded-lg px-3 py-2 border-0 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 ${
+        dark ? 'bg-slate-700 text-white' : 'bg-white border border-slate-300 text-slate-800'
+      }`}
       value={currentTeamId ?? ''}
       disabled={pending}
       onChange={(e) => {
@@ -28,11 +32,11 @@ export default function TeamSwitcher({
       }}
     >
       <option value="" disabled>
-        Баг сонгох...
+        — Баг сонгох —
       </option>
       {teams.map((t) => (
         <option key={t.id} value={t.id}>
-          {t.club_name} / {t.name}
+          {t.name} {t.club_name ? `(${t.club_name})` : ''}
         </option>
       ))}
     </select>

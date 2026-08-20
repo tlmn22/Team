@@ -46,7 +46,7 @@ export default function ReportsTabs({
 
   return (
     <div>
-      <div className="flex gap-1 border-b border-slate-200 mb-4">
+      <div className="flex gap-1 border-b border-gray-100 mb-4">
         {TABS.map((t) => (
           <button
             key={t}
@@ -54,7 +54,7 @@ export default function ReportsTabs({
             className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
               tab === t
                 ? 'border-orange-500 text-orange-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             {TAB_LABEL[t]}
@@ -63,73 +63,70 @@ export default function ReportsTabs({
       </div>
 
       {tab === 'attendance' && (
-        <ul className="divide-y divide-slate-200 bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="space-y-3">
           {attendance.map((a) => {
             const pct = a.total > 0 ? Math.round((a.present / a.total) * 100) : 0;
             return (
-              <li key={a.userId} className="px-4 py-3">
+              <div key={a.userId} className="px-1 py-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-slate-800">{a.name}</span>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-sm text-gray-800">{a.name}</span>
+                  <span className="text-xs text-gray-500">
                     {a.present}/{a.total} ({pct}%)
                   </span>
                 </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-orange-500 rounded-full"
-                    style={{ width: `${pct}%` }}
-                  />
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-500 rounded-full" style={{ width: `${pct}%` }} />
                 </div>
-              </li>
+              </div>
             );
           })}
           {attendance.length === 0 && (
-            <li className="px-4 py-3 text-sm text-slate-400">Өгөгдөл алга</li>
+            <p className="text-gray-400 text-sm text-center py-8">Өгөгдөл алга</p>
           )}
-        </ul>
+        </div>
       )}
 
       {tab === 'players' && (
-        <ul className="divide-y divide-slate-200 bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="space-y-1">
           {players.map((p) => (
-            <li key={p.userId} className="flex items-center justify-between px-4 py-3">
+            <div key={p.userId} className="flex items-center justify-between px-1 py-2">
               <div>
-                <span className="text-sm text-slate-800">{p.name}</span>
-                <span className="text-xs text-slate-400 ml-2">
-                  {p.role === 'coach' ? 'Дасгалжуулагч' : p.position ?? ''}
+                <span className="text-sm text-gray-800">{p.name}</span>
+                <span className="text-xs text-gray-400 ml-2">
+                  {p.role === 'coach' ? 'Дасгалжуулагч' : (p.position ?? '')}
                 </span>
               </div>
               {p.jerseyNumber != null && (
-                <span className="text-xs font-semibold text-slate-500">#{p.jerseyNumber}</span>
+                <span className="text-xs font-semibold text-gray-500">#{p.jerseyNumber}</span>
               )}
-            </li>
+            </div>
           ))}
           {players.length === 0 && (
-            <li className="px-4 py-3 text-sm text-slate-400">Гишүүн алга</li>
+            <p className="text-gray-400 text-sm text-center py-8">Гишүүн алга</p>
           )}
-        </ul>
+        </div>
       )}
 
       {tab === 'content' && (
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-sm text-slate-500">Нийт пост</div>
-            <div className="text-2xl font-bold text-slate-900">{content.totalPosts}</div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="text-sm text-gray-500">Нийт пост</div>
+            <div className="text-2xl font-bold text-gray-900">{content.totalPosts}</div>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-sm text-slate-500">Нийт үзэлт</div>
-            <div className="text-2xl font-bold text-slate-900">{content.totalViews}</div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="text-sm text-gray-500">Нийт үзэлт</div>
+            <div className="text-2xl font-bold text-gray-900">{content.totalViews}</div>
           </div>
-          <div className="col-span-2 bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-sm text-slate-500 mb-2">Төрлөөр</div>
-            <ul className="text-sm text-slate-700 space-y-1">
+          <div className="col-span-2 bg-gray-50 rounded-lg p-4">
+            <div className="text-sm text-gray-500 mb-2">Төрлөөр</div>
+            <div className="text-sm text-gray-700 space-y-1">
               {Object.entries(content.byType).map(([type, count]) => (
-                <li key={type} className="flex justify-between">
+                <div key={type} className="flex justify-between">
                   <span>{type}</span>
-                  <span className="text-slate-400">{count}</span>
-                </li>
+                  <span className="text-gray-400">{count}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       )}

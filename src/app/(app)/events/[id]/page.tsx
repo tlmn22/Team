@@ -21,7 +21,7 @@ const STATUS_COLOR: Record<string, string> = {
   present: 'bg-green-100 text-green-700',
   absent: 'bg-red-100 text-red-700',
   late: 'bg-yellow-100 text-yellow-700',
-  excused: 'bg-slate-100 text-slate-600',
+  excused: 'bg-gray-100 text-gray-600',
 };
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -59,57 +59,63 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     .order('created_at', { ascending: false });
 
   return (
-    <div className="max-w-2xl">
-      <Link href="/events" className="text-sm text-slate-400 hover:text-slate-600">
+    <div className="max-w-2xl space-y-6">
+      <Link href="/events" className="text-sm text-gray-400 hover:text-orange-600">
         ← Хуваарь
       </Link>
 
-      <div className="mt-3 mb-6">
-        <h1 className="text-xl font-bold text-slate-900">{event.title}</h1>
-        <div className="text-sm text-slate-500 mt-1">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h1 className="text-xl font-bold text-gray-900">{event.title}</h1>
+        <div className="text-sm text-gray-500 mt-1">
           {TYPE_LABEL[event.type] ?? event.type} · {event.date}
           {event.time ? ` · ${event.time.slice(0, 5)}` : ''}
           {event.location ? ` · ${event.location}` : ''}
         </div>
-        {event.description && <p className="text-sm text-slate-600 mt-2">{event.description}</p>}
+        {event.description && <p className="text-sm text-gray-600 mt-3">{event.description}</p>}
       </div>
 
-      <h2 className="text-sm font-semibold text-slate-700 mb-2">Ирц</h2>
-      <ul className="divide-y divide-slate-200 bg-white border border-slate-200 rounded-xl overflow-hidden mb-8">
-        {(members ?? []).map((m) => {
-          const profile = m.profiles as unknown as { id: string; name: string };
-          const a = attendanceMap.get(m.user_id);
-          return (
-            <li key={m.user_id} className="flex items-center justify-between px-4 py-2.5">
-              <span className="text-sm text-slate-800">{profile.name}</span>
-              <span
-                className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  a ? STATUS_COLOR[a.status] : 'bg-slate-100 text-slate-400'
-                }`}
-              >
-                {a ? STATUS_LABEL[a.status] : 'Тэмдэглээгүй'}
-              </span>
-            </li>
-          );
-        })}
-        {(members ?? []).length === 0 && (
-          <li className="px-4 py-3 text-sm text-slate-400">Багийн гишүүн алга</li>
-        )}
-      </ul>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h2 className="font-semibold text-gray-900 mb-3">Ирц</h2>
+        <div className="space-y-1">
+          {(members ?? []).map((m) => {
+            const profile = m.profiles as unknown as { id: string; name: string };
+            const a = attendanceMap.get(m.user_id);
+            return (
+              <div key={m.user_id} className="flex items-center justify-between px-1 py-2">
+                <span className="text-sm text-gray-800">{profile.name}</span>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    a ? STATUS_COLOR[a.status] : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {a ? STATUS_LABEL[a.status] : 'Тэмдэглээгүй'}
+                </span>
+              </div>
+            );
+          })}
+          {(members ?? []).length === 0 && (
+            <p className="text-gray-400 text-sm text-center py-4">Багийн гишүүн алга</p>
+          )}
+        </div>
+      </div>
 
-      <h2 className="text-sm font-semibold text-slate-700 mb-2">Тэмдэглэл</h2>
-      <ul className="space-y-2">
-        {(notes ?? []).map((n) => {
-          const author = n.profiles as unknown as { name: string } | null;
-          return (
-            <li key={n.id} className="bg-white border border-slate-200 rounded-lg px-4 py-2.5">
-              <p className="text-sm text-slate-700">{n.content}</p>
-              <p className="text-xs text-slate-400 mt-1">{author?.name ?? '—'}</p>
-            </li>
-          );
-        })}
-        {(notes ?? []).length === 0 && <p className="text-sm text-slate-400">Тэмдэглэл алга</p>}
-      </ul>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h2 className="font-semibold text-gray-900 mb-3">Тэмдэглэл</h2>
+        <div className="space-y-2">
+          {(notes ?? []).map((n) => {
+            const author = n.profiles as unknown as { name: string } | null;
+            return (
+              <div key={n.id} className="bg-gray-50 rounded-lg px-4 py-2.5">
+                <p className="text-sm text-gray-700">{n.content}</p>
+                <p className="text-xs text-gray-400 mt-1">{author?.name ?? '—'}</p>
+              </div>
+            );
+          })}
+          {(notes ?? []).length === 0 && (
+            <p className="text-gray-400 text-sm text-center py-4">Тэмдэглэл алга</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
