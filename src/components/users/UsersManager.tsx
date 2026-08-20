@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/components/Toast';
 import { deleteUser, type UserRow } from '@/lib/actions/users';
 import UserFormModal from './UserFormModal';
+import GrantLoginModal from './GrantLoginModal';
 
 const ROLE_BADGE: Record<string, string> = {
   superadmin: 'bg-red-100 text-red-700',
@@ -17,6 +18,7 @@ export default function UsersManager({ users }: { users: UserRow[] }) {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'superadmin' | 'user'>('all');
   const [formTarget, setFormTarget] = useState<UserRow | 'new' | null>(null);
+  const [grantTarget, setGrantTarget] = useState<UserRow | null>(null);
   const [pending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
@@ -111,6 +113,14 @@ export default function UsersManager({ users }: { users: UserRow[] }) {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${ROLE_BADGE[u.system_role]}`}>
                     {ROLE_LABEL[u.system_role]}
                   </span>
+                  {!u.hasLogin && (
+                    <button
+                      onClick={() => setGrantTarget(u)}
+                      className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      Login олгох
+                    </button>
+                  )}
                   <button
                     onClick={() => setFormTarget(u)}
                     className="text-xs text-gray-500 hover:text-orange-600"
@@ -137,6 +147,17 @@ export default function UsersManager({ users }: { users: UserRow[] }) {
           onClose={() => setFormTarget(null)}
           onSaved={() => {
             setFormTarget(null);
+            refresh();
+          }}
+        />
+      )}
+
+      {grantTarget && (
+        <GrantLoginModal
+          user={grantTarget}
+          onClose={() => setGrantTarget(null)}
+          onSaved={() => {
+            setGrantTarget(null);
             refresh();
           }}
         />

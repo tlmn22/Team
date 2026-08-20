@@ -126,6 +126,55 @@ export async function updateUser(
   return {};
 }
 
+export async function grantLogin(
+  userId: string,
+  formData: FormData
+): Promise<{ error?: string }> {
+  await assertSuperAdmin();
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const password = String(formData.get('password') ?? '');
+
+  if (!email) return { error: 'И-мэйл оруулна уу' };
+  if (password.length < 6) return { error: 'Нууц үг дор хаяж 6 тэмдэгт байх ёстой' };
+
+  const admin = createAdminClient();
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('id, auth_user_id')
+    .eq('id', userId)
+    .maybeSingle();
+  if (!profile) return { error: 'Хэрэглэгч олдсонгүй' };
+  if (profile.auth_user_id) return { error: 'Энэ хэрэглэгч аль хэдийн login эрхтэй' };
+
+  const { data: existing } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('email', email)
+    .neq('id', userId)
+    .maybeSingle();
+  if (existing) return { error: 'Энэ и-мэйлтэй хэрэглэгч аль хэдийн бий' };
+
+  const { data: authUser, error: authError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (authError || !authUser.user) return { error: authError?.message ?? 'Акаунт үүсгэхэд алдаа гарлаа' };
+
+  const { error: profileError } = await admin
+    .from('profiles')
+    .update({ auth_user_id: authUser.user.id, email })
+    .eq('id', userId);
+  if (profileError) {
+    await admin.auth.admin.deleteUser(authUser.user.id);
+    return { error: profileError.message };
+  }
+
+  revalidatePath('/users');
+  return {};
+}
+
 export async function deleteUser(userId: string): Promise<{ error?: string }> {
   const me = await requireUser();
   if (!(await isSuperAdmin())) return { error: 'Зөвхөн ерөнхий админ энэ үйлдлийг хийх боломжтой' };
