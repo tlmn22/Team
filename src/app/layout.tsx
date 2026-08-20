@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import ToastHost from '@/components/Toast';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -19,7 +20,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       <head>
         <meta name="theme-color" content="#f97316" />
       </head>
-      <body className="h-full bg-gray-50 text-gray-900 font-sans antialiased">{children}</body>
+      <body className="h-full bg-gray-50 text-gray-900 font-sans antialiased">
+        {children}
+        <ToastHost />
+      </body>
     </html>
   );
 }

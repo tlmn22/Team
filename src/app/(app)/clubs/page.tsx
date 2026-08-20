@@ -1,7 +1,12 @@
-import { requireUser } from '@/lib/auth';
-import ComingSoon from '@/components/ComingSoon';
+import { redirect } from 'next/navigation';
+import { requireUser, isSuperAdmin } from '@/lib/auth';
+import { listClubs } from '@/lib/actions/clubs';
+import ClubsManager from '@/components/clubs/ClubsManager';
 
 export default async function ClubsPage() {
   await requireUser();
-  return <ComingSoon title="Клубууд" />;
+  if (!(await isSuperAdmin())) redirect('/dashboard');
+
+  const clubs = await listClubs();
+  return <ClubsManager clubs={clubs} />;
 }
