@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { requireUser, getPrimaryRole, getMyTeams } from '@/lib/auth';
+import { requireUser, getPrimaryRole, getMyTeams, getCurrentTeamId } from '@/lib/auth';
 import { logout } from '@/app/login/actions';
+import TeamSwitcher from '@/components/TeamSwitcher';
 
 /** includes/header.php-ийн role-based nav visibility логикийн орлого */
 function navVisibility(role: string) {
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser();
   const role = await getPrimaryRole();
   const myTeams = await getMyTeams();
+  const currentTeamId = await getCurrentTeamId();
   const nav = navVisibility(role);
 
   const links: { href: string; label: string; show: boolean }[] = [
@@ -38,9 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="px-4 py-4 border-b border-slate-200">
           <div className="font-bold text-slate-900">Sport Manager</div>
           <div className="text-xs text-slate-500 mt-1">{user.name}</div>
-          {myTeams.length > 1 && (
-            <div className="text-xs text-slate-400 mt-1">{myTeams.length} баг</div>
-          )}
+          <TeamSwitcher teams={myTeams} currentTeamId={currentTeamId} />
         </div>
         <nav className="flex-1 py-2">
           {links
