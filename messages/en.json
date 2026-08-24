@@ -232,7 +232,7 @@
     "cameLateAnyway": "Attended but late",
     "worstPractice": "Lowest-attendance practice",
     "practiceAttendance": "Practice attendance",
-    "clickColumnHint": "Click a column to highlight that practice",
+    "clickColumnHint": "Click a column to see that day's details",
     "athletesXPractices": "Athletes × practices",
     "shownAndClickHint": "{count} athletes · click a row for detail",
     "sortByRisk": "By risk",

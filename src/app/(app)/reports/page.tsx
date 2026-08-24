@@ -3,7 +3,12 @@ import { requireUser, getCurrentTeamId, getMyTeams } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import NoTeamSelected from '@/components/NoTeamSelected';
 import type { AttendanceStatus } from '@/lib/actions/attendance';
-import type { ReportPlayer, ReportEvent, ReportAttendanceRow } from '@/components/reports/AttendanceReport';
+import type {
+  ReportPlayer,
+  ReportEvent,
+  ReportAttendanceRow,
+  ReportEventNote,
+} from '@/components/reports/AttendanceReport';
 import ReportsTabs, { type PlayerRow, type ContentStats } from '@/components/reports/ReportsTabs';
 
 export default async function ReportsPage() {
@@ -55,12 +60,29 @@ export default async function ReportsPage() {
     .filter((p) => p.role === 'player')
     .map((p) => ({ id: p.userId, name: p.name, photoUrl: p.photoUrl }));
 
-  const reportEvents: ReportEvent[] = (events ?? []).map((e) => ({
-    id: e.id,
-    title: e.title,
-    type: e.type,
-    date: e.date,
-  }));
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const reportEvents: ReportEvent[] = (events ?? [])
+    .filter((e) => e.date <= todayStr)
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      type: e.type,
+      date: e.date,
+    }));
+  const reportEventIds = reportEvents.map((e) => e.id);
+
+  const { data: eventNotesRows } = reportEventIds.length
+    ? await admin
+        .from('event_notes')
+        .select('id, event_id, content, created_at, profiles(name)')
+        .in('event_id', reportEventIds)
+        .order('created_at', { ascending: false })
+    : { data: [] as { id: number; event_id: number; content: string; profiles: { name: string } | null }[] };
+
+  const reportEventNotes: ReportEventNote[] = (eventNotesRows ?? []).map((n) => {
+    const author = n.profiles as unknown as { name: string } | null;
+    return { id: n.id, eventId: n.event_id, content: n.content, authorName: author?.name ?? null };
+  });
 
   const reportAttendance: ReportAttendanceRow[] = (attendanceRows ?? []).map((a) => ({
     userId: a.user_id,
@@ -88,6 +110,7 @@ export default async function ReportsPage() {
         reportPlayers={reportPlayers}
         events={reportEvents}
         attendance={reportAttendance}
+        eventNotes={reportEventNotes}
         players={players}
         content={content}
       />

@@ -24,6 +24,13 @@ export interface ReportAttendanceRow {
   status: AttendanceStatus;
 }
 
+export interface ReportEventNote {
+  id: number;
+  eventId: number;
+  content: string;
+  authorName: string | null;
+}
+
 const RISK_THRESHOLD = 75;
 
 type PeriodId = '7' | '30' | 'season';
@@ -123,13 +130,16 @@ export default function AttendanceReport({
   players,
   events,
   attendance,
+  eventNotes,
 }: {
   teamName: string;
   players: ReportPlayer[];
   events: ReportEvent[];
   attendance: ReportAttendanceRow[];
+  eventNotes: ReportEventNote[];
 }) {
   const t = useTranslations('reports');
+  const tEvents = useTranslations('events');
   const tEventTypes = useTranslations('eventTypes');
   const tCommon = useTranslations('common');
   const [periodId, setPeriodId] = useState<PeriodId>('30');
@@ -137,6 +147,7 @@ export default function AttendanceReport({
   const [sort, setSort] = useState<Sort>('risk');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [highlightedEventId, setHighlightedEventId] = useState<number | null>(null);
+  const [dayModalEvent, setDayModalEvent] = useState<ReportEvent | null>(null);
 
   const eventTypeLabel = (type: string) => (tEventTypes.has(type) ? tEventTypes(type) : type);
   const statusTitle = (status: AttendanceStatus) => t(status);
@@ -154,6 +165,16 @@ export default function AttendanceReport({
     for (const a of attendance) m.set(`${a.userId}:${a.eventId}`, a.status);
     return m;
   }, [attendance]);
+
+  const notesByEvent = useMemo(() => {
+    const m = new Map<number, ReportEventNote[]>();
+    for (const n of eventNotes) {
+      const list = m.get(n.eventId);
+      if (list) list.push(n);
+      else m.set(n.eventId, [n]);
+    }
+    return m;
+  }, [eventNotes]);
 
   const rangeEvents = useMemo(() => {
     if (period.days == null) return events;
@@ -357,7 +378,10 @@ export default function AttendanceReport({
                   return (
                     <button
                       key={s.event.id}
-                      onClick={() => setHighlightedEventId(active ? null : s.event.id)}
+                      onClick={() => {
+                        setHighlightedEventId(active ? null : s.event.id);
+                        setDayModalEvent(s.event);
+                      }}
                       title={`${fmtDate(s.event.date)} · ${eventTypeLabel(s.event.type)} · ${s.n}/${players.length}`}
                       className={`flex-1 min-w-0 flex flex-col justify-end items-center gap-1 h-full rounded-t-md ${
                         active ? 'bg-orange-50' : ''
@@ -414,15 +438,16 @@ export default function AttendanceReport({
                     </div>
                     <div className="flex gap-1">
                       {rangeEvents.map((e) => (
-                        <div
+                        <button
                           key={e.id}
+                          onClick={() => setDayModalEvent(e)}
                           title={`${fmtDate(e.date)} · ${eventTypeLabel(e.type)}`}
-                          className={`w-6 text-center text-[9px] ${
+                          className={`w-6 text-center text-[9px] hover:text-orange-600 ${
                             highlightedEventId === e.id ? 'text-orange-600' : 'text-gray-400'
                           }`}
                         >
                           <div>{fmtDate(e.date)}</div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                     <div className="w-32 flex-shrink-0 text-right text-[10px] uppercase tracking-wide text-gray-400">
@@ -617,6 +642,112 @@ export default function AttendanceReport({
             {eventStats.length === 0 && <p className="text-xs text-gray-400 text-center py-2">{t('noPractices')}</p>}
           </section>
         </aside>
+      </div>
+
+      {dayModalEvent && (
+        <DayDetailModal
+          event={dayModalEvent}
+          players={players}
+          attMap={attMap}
+          notes={notesByEvent.get(dayModalEvent.id) ?? []}
+          eventTypeLabel={eventTypeLabel}
+          statusTitle={statusTitle}
+          tEvents={tEvents}
+          tCommon={tCommon}
+          onClose={() => setDayModalEvent(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function DayDetailModal({
+  event,
+  players,
+  attMap,
+  notes,
+  eventTypeLabel,
+  statusTitle,
+  tEvents,
+  tCommon,
+  onClose,
+}: {
+  event: ReportEvent;
+  players: ReportPlayer[];
+  attMap: Map<string, AttendanceStatus>;
+  notes: ReportEventNote[];
+  eventTypeLabel: (type: string) => string;
+  statusTitle: (status: AttendanceStatus) => string;
+  tEvents: ReturnType<typeof useTranslations>;
+  tCommon: ReturnType<typeof useTranslations>;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-100 sticky top-0 bg-white">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">{event.title}</div>
+            <div className="text-xs text-gray-400 mt-0.5">
+              {fmtDate(event.date)} · {eventTypeLabel(event.type)}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-sm px-1"
+            aria-label={tCommon('close')}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div>
+            <div className="text-xs font-semibold text-gray-900 mb-2">{tEvents('attendanceTitle')}</div>
+            <div className="space-y-1">
+              {players.map((p) => {
+                const status = attMap.get(`${p.id}:${event.id}`) ?? null;
+                return (
+                  <div key={p.id} className="flex items-center gap-2.5 py-1">
+                    <Avatar name={p.name} photoUrl={p.photoUrl} size={24} />
+                    <div className="flex-1 min-w-0 text-xs text-gray-700 truncate">{p.name}</div>
+                    <div className={`w-2 h-2 rounded-sm flex-shrink-0 ${cellClass(status)}`} />
+                    <div className="text-[11px] text-gray-500 w-16 text-right">
+                      {status ? statusTitle(status) : tEvents('notMarked')}
+                    </div>
+                  </div>
+                );
+              })}
+              {players.length === 0 && (
+                <p className="text-xs text-gray-400 text-center py-2">{tEvents('noMembers')}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-semibold text-gray-900 mb-2">{tEvents('notesTitle')}</div>
+            <div className="space-y-2">
+              {notes.map((n) => (
+                <div key={n.id} className="bg-gray-50 rounded-lg px-3 py-2">
+                  <div
+                    className="rich-text-content text-xs text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: n.content }}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">{n.authorName ?? '—'}</p>
+                </div>
+              ))}
+              {notes.length === 0 && (
+                <p className="text-xs text-gray-400 text-center py-2">{tEvents('noNotes')}</p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import AttendanceReport, {
   type ReportPlayer,
   type ReportEvent,
   type ReportAttendanceRow,
+  type ReportEventNote,
 } from './AttendanceReport';
 
 export interface PlayerRow {
@@ -44,6 +45,7 @@ export default function ReportsTabs({
   reportPlayers,
   events,
   attendance,
+  eventNotes,
   players,
   content,
 }: {
@@ -51,6 +53,7 @@ export default function ReportsTabs({
   reportPlayers: ReportPlayer[];
   events: ReportEvent[];
   attendance: ReportAttendanceRow[];
+  eventNotes: ReportEventNote[];
   players: PlayerRow[];
   content: ContentStats;
 }) {
@@ -82,7 +85,13 @@ export default function ReportsTabs({
       </div>
 
       {tab === 'attendance' && (
-        <AttendanceReport teamName={teamName} players={reportPlayers} events={events} attendance={attendance} />
+        <AttendanceReport
+          teamName={teamName}
+          players={reportPlayers}
+          events={events}
+          attendance={attendance}
+          eventNotes={eventNotes}
+        />
       )}
 
       {tab === 'players' && (
