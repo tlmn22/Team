@@ -2,11 +2,8 @@ import { requireUser, getCurrentTeamId, getMyTeams } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import NoTeamSelected from '@/components/NoTeamSelected';
 import type { AttendanceStatus } from '@/lib/actions/attendance';
-import ReportsTabs, {
-  type AttendanceRow,
-  type PlayerRow,
-  type ContentStats,
-} from '@/components/reports/ReportsTabs';
+import type { ReportPlayer, ReportEvent, ReportAttendanceRow } from '@/components/reports/AttendanceReport';
+import ReportsTabs, { type PlayerRow, type ContentStats } from '@/components/reports/ReportsTabs';
 
 export default async function ReportsPage() {
   await requireUser();
@@ -19,13 +16,14 @@ export default async function ReportsPage() {
 
   const admin = createAdminClient();
 
-  const [{ data: members }, { data: events }, { data: posts }] = await Promise.all([
+  const [{ data: team }, { data: members }, { data: events }, { data: posts }] = await Promise.all([
+    admin.from('teams').select('name').eq('id', teamId).maybeSingle(),
     admin
       .from('team_members')
       .select('user_id, role, jersey_number, position, profiles!inner(name, photo_url)')
       .eq('team_id', teamId)
       .eq('active', true),
-    admin.from('events').select('id, title, type, date').eq('team_id', teamId).order('date', { ascending: false }),
+    admin.from('events').select('id, title, type, date').eq('team_id', teamId).order('date', { ascending: true }),
     admin.from('posts').select('id, type').eq('team_id', teamId),
   ]);
   const eventIds = (events ?? []).map((e) => e.id);
@@ -52,31 +50,22 @@ export default async function ReportsPage() {
     };
   });
 
-  const attendance: AttendanceRow[] = players
+  const reportPlayers: ReportPlayer[] = players
     .filter((p) => p.role === 'player')
-    .map((p) => {
-      const rows = (attendanceRows ?? []).filter((a) => a.user_id === p.userId);
-      const present = rows.filter((a) => a.status === 'present' || a.status === 'late').length;
-      const details = (events ?? []).map((e) => {
-        const row = rows.find((a) => a.event_id === e.id);
-        return {
-          eventId: e.id,
-          title: e.title,
-          date: e.date,
-          type: e.type,
-          status: (row?.status as AttendanceStatus) ?? null,
-        };
-      });
-      return {
-        userId: p.userId,
-        name: p.name,
-        photoUrl: p.photoUrl,
-        role: p.role,
-        present,
-        total: rows.length,
-        details,
-      };
-    });
+    .map((p) => ({ id: p.userId, name: p.name, photoUrl: p.photoUrl }));
+
+  const reportEvents: ReportEvent[] = (events ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    type: e.type,
+    date: e.date,
+  }));
+
+  const reportAttendance: ReportAttendanceRow[] = (attendanceRows ?? []).map((a) => ({
+    userId: a.user_id,
+    eventId: a.event_id,
+    status: a.status as AttendanceStatus,
+  }));
 
   const byType: Record<string, number> = {};
   for (const p of posts ?? []) {
@@ -91,9 +80,14 @@ export default async function ReportsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Тайлан</h1>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <ReportsTabs attendance={attendance} players={players} content={content} />
-      </div>
+      <ReportsTabs
+        teamName={team?.name ?? ''}
+        reportPlayers={reportPlayers}
+        events={reportEvents}
+        attendance={reportAttendance}
+        players={players}
+        content={content}
+      />
     </div>
   );
 }

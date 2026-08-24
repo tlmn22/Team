@@ -1,26 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import type { AttendanceStatus } from '@/lib/actions/attendance';
-import PlayerAttendanceModal from './PlayerAttendanceModal';
-
-export interface PlayerAttendanceDetail {
-  eventId: number;
-  title: string;
-  date: string;
-  type: string;
-  status: AttendanceStatus | null;
-}
-
-export interface AttendanceRow {
-  userId: string;
-  name: string;
-  photoUrl: string | null;
-  role: string;
-  present: number;
-  total: number;
-  details: PlayerAttendanceDetail[];
-}
+import AttendanceReport, {
+  type ReportPlayer,
+  type ReportEvent,
+  type ReportAttendanceRow,
+} from './AttendanceReport';
 
 export interface PlayerRow {
   userId: string;
@@ -60,20 +45,25 @@ function Avatar({ name, photoUrl }: { name: string; photoUrl: string | null }) {
 }
 
 export default function ReportsTabs({
+  teamName,
+  reportPlayers,
+  events,
   attendance,
   players,
   content,
 }: {
-  attendance: AttendanceRow[];
+  teamName: string;
+  reportPlayers: ReportPlayer[];
+  events: ReportEvent[];
+  attendance: ReportAttendanceRow[];
   players: PlayerRow[];
   content: ContentStats;
 }) {
   const [tab, setTab] = useState<Tab>('attendance');
-  const [selectedPlayer, setSelectedPlayer] = useState<AttendanceRow | null>(null);
 
   return (
-    <div>
-      <div className="flex gap-1 border-b border-gray-100 mb-4">
+    <div className="space-y-4">
+      <div className="flex gap-1 border-b border-gray-100">
         {TABS.map((t) => (
           <button
             key={t}
@@ -90,38 +80,11 @@ export default function ReportsTabs({
       </div>
 
       {tab === 'attendance' && (
-        <div className="space-y-2">
-          {attendance.map((a) => {
-            const pct = a.total > 0 ? Math.round((a.present / a.total) * 100) : 0;
-            return (
-              <button
-                key={a.userId}
-                onClick={() => setSelectedPlayer(a)}
-                className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:border-orange-200 hover:bg-orange-50/40 transition-colors text-left"
-              >
-                <Avatar name={a.name} photoUrl={a.photoUrl} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-sm font-medium text-gray-900 truncate">{a.name}</span>
-                    <span className="text-xs text-gray-500 flex-shrink-0">
-                      {a.present}/{a.total} · {pct}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-500 rounded-full" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-          {attendance.length === 0 && (
-            <p className="text-gray-400 text-sm text-center py-8">Өгөгдөл алга</p>
-          )}
-        </div>
+        <AttendanceReport teamName={teamName} players={reportPlayers} events={events} attendance={attendance} />
       )}
 
       {tab === 'players' && (
-        <div className="space-y-1">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-1">
           {players.map((p) => (
             <div key={p.userId} className="flex items-center justify-between px-1 py-2">
               <div className="flex items-center gap-3">
@@ -145,7 +108,7 @@ export default function ReportsTabs({
       )}
 
       {tab === 'content' && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 grid grid-cols-2 gap-4">
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="text-sm text-gray-500">Нийт пост</div>
             <div className="text-2xl font-bold text-gray-900">{content.totalPosts}</div>
@@ -166,10 +129,6 @@ export default function ReportsTabs({
             </div>
           </div>
         </div>
-      )}
-
-      {selectedPlayer && (
-        <PlayerAttendanceModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
       )}
     </div>
   );
