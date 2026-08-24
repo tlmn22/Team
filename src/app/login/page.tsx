@@ -1,22 +1,24 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useTranslations } from 'next-intl';
 import { login, type LoginState } from './actions';
 
 const initialState: LoginState = {};
 
 export default function LoginPage() {
+  const t = useTranslations('login');
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">Sport Manager</h1>
-        <p className="text-slate-500 text-sm mb-6">Нэвтрэх</p>
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('title')}</h1>
+        <p className="text-slate-500 text-sm mb-6">{t('subtitle')}</p>
 
         <form action={formAction} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">И-мэйл / Утас</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">{t('identifier')}</label>
             <input
               name="identifier"
               type="text"
@@ -26,7 +28,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Нууц үг</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">{t('password')}</label>
             <input
               name="password"
               type="password"
@@ -43,7 +45,7 @@ export default function LoginPage() {
             disabled={pending}
             className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-medium rounded-lg py-2 text-sm transition"
           >
-            {pending ? 'Нэвтэрч байна...' : 'Нэвтрэх'}
+            {pending ? t('submitting') : t('submit')}
           </button>
         </form>
       </div>

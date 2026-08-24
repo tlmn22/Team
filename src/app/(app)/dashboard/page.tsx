@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import {
   requireUser,
   getPrimaryRole,
@@ -9,7 +10,6 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin';
 import { IconClubs, IconEvents, IconPosts, IconChevronRight } from '@/components/icons';
 
-const TYPE_LABEL: Record<string, string> = { practice: 'Бэлтгэл', meeting: 'Уулзалт', game: 'Тоглолт', other: 'Бусад' };
 const TYPE_COLOR: Record<string, string> = {
   practice: 'bg-orange-100 text-orange-700',
   meeting: 'bg-blue-100 text-blue-700',
@@ -20,16 +20,17 @@ const ROLE_BADGE: Record<string, string> = {
   manager: 'bg-blue-100 text-blue-700',
   owner: 'bg-purple-100 text-purple-700',
 };
-const MONTHS = ['1-р сар', '2-р сар', '3-р сар', '4-р сар', '5-р сар', '6-р сар', '7-р сар', '8-р сар', '9-р сар', '10-р сар', '11-р сар', '12-р сар'];
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const [role, myClubs, myTeams, currentTeamId] = await Promise.all([
+  const [role, myClubs, myTeams, currentTeamId, t] = await Promise.all([
     getPrimaryRole(),
     getMyClubs(),
     getMyTeams(),
     getCurrentTeamId(),
+    getTranslations(),
   ]);
+  const MONTHS = t.raw('common.months') as string[];
 
   const teamIds = currentTeamId ? [currentTeamId] : myTeams.map((t) => t.id);
   const admin = createAdminClient();
@@ -85,24 +86,24 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Сайн байна уу, {user.name}!</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Багийн өнөөдрийн байдал</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.greeting', { name: user.name })}</h1>
+        <p className="text-gray-500 text-sm mt-0.5">{t('dashboard.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<IconTeamsInline />} color="orange" value={totalPlayers} label="Нийт тоглогч" />
-        <StatCard icon={<IconEvents className="w-5 h-5" />} color="blue" value={upcomingEvents.length} label="Ирэх эвент" />
-        <StatCard icon={<IconPosts className="w-5 h-5" />} color="green" value={totalPosts} label="Нийт пост" />
-        <StatCard icon={<IconRateInline />} color="purple" value={`${attendanceRate}%`} label="Ирцийн хувь" />
+        <StatCard icon={<IconTeamsInline />} color="orange" value={totalPlayers} label={t('dashboard.totalPlayers')} />
+        <StatCard icon={<IconEvents className="w-5 h-5" />} color="blue" value={upcomingEvents.length} label={t('dashboard.upcomingEvents')} />
+        <StatCard icon={<IconPosts className="w-5 h-5" />} color="green" value={totalPosts} label={t('dashboard.totalPosts')} />
+        <StatCard icon={<IconRateInline />} color="purple" value={`${attendanceRate}%`} label={t('dashboard.attendanceRate')} />
       </div>
 
       {(role === 'superadmin' || myClubs.length > 1) && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Клубууд</h2>
+            <h2 className="font-semibold text-gray-900">{t('dashboard.clubsTitle')}</h2>
             {role === 'superadmin' && (
               <Link href="/clubs" className="text-orange-500 hover:text-orange-600 text-sm">
-                Бүгдийг харах
+                {t('common.viewAll')}
               </Link>
             )}
           </div>
@@ -124,7 +125,7 @@ export default async function DashboardPage() {
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full ${ROLE_BADGE[club.my_role] ?? 'bg-blue-100 text-blue-700'}`}
                 >
-                  {club.my_role === 'owner' ? 'Эзэн' : 'Менежер'}
+                  {club.my_role === 'owner' ? t('roles.owner') : t('roles.manager')}
                 </span>
               </Link>
             ))}
@@ -135,14 +136,14 @@ export default async function DashboardPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Ирэх эвентүүд</h2>
+            <h2 className="font-semibold text-gray-900">{t('dashboard.upcomingEventsTitle')}</h2>
             <Link href="/events" className="text-orange-500 hover:text-orange-600 text-sm flex items-center gap-1">
-              Бүгдийг харах
+              {t('common.viewAll')}
               <IconChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
           {upcomingEvents.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-8">Ирэх эвент алга</p>
+            <p className="text-gray-400 text-sm text-center py-8">{t('dashboard.noUpcomingEvents')}</p>
           ) : (
             <div className="space-y-1">
               {upcomingEvents.map((ev) => {
@@ -163,13 +164,13 @@ export default async function DashboardPage() {
                       </p>
                       <p className="text-gray-400 text-xs mt-0.5">
                         {ev.time ? `${ev.time.slice(0, 5)} · ` : ''}
-                        {ev.location || 'Байршил тодорхойгүй'}
+                        {ev.location || t('dashboard.locationUnknown')}
                       </p>
                     </div>
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${TYPE_COLOR[ev.type] ?? TYPE_COLOR.other}`}
                     >
-                      {TYPE_LABEL[ev.type] ?? ev.type}
+                      {t.has(`eventTypes.${ev.type}`) ? t(`eventTypes.${ev.type}`) : ev.type}
                     </span>
                   </Link>
                 );
@@ -180,14 +181,14 @@ export default async function DashboardPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Сүүлийн мэдээ</h2>
+            <h2 className="font-semibold text-gray-900">{t('dashboard.recentPostsTitle')}</h2>
             <Link href="/posts" className="text-orange-500 hover:text-orange-600 text-sm flex items-center gap-1">
-              Бүгдийг харах
+              {t('common.viewAll')}
               <IconChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
           {recentPosts.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-8">Пост алга</p>
+            <p className="text-gray-400 text-sm text-center py-8">{t('dashboard.noPosts')}</p>
           ) : (
             <div className="space-y-1">
               {recentPosts.map((p) => (

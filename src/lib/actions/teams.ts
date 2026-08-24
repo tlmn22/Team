@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 import { requireUser, isSuperAdmin, canManageClub, getMyClubs } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { uploadImageIfProvided } from '@/lib/actions/upload-image';
@@ -26,7 +27,8 @@ const LOGO_BUCKET = 'team-logos';
 async function assertCanManageClub(clubId: number) {
   await requireUser();
   if (!(await canManageClub(clubId))) {
-    throw new Error('Энэ клубыг удирдах эрхгүй байна');
+    const t = await getTranslations('teams');
+    throw new Error(t('cannotManageClub'));
   }
 }
 
@@ -80,9 +82,10 @@ export async function createTeam(
   formData: FormData
 ): Promise<{ error?: string }> {
   await assertCanManageClub(clubId);
+  const t = await getTranslations('teams');
   const name = String(formData.get('name') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim() || null;
-  if (!name) return { error: 'Багийн нэр оруулна уу' };
+  if (!name) return { error: t('nameRequired') };
 
   const user = await requireUser();
   const admin = createAdminClient();
@@ -91,7 +94,7 @@ export async function createTeam(
     .insert({ club_id: clubId, name, description, created_by: user.id })
     .select('id')
     .single();
-  if (error || !team) return { error: error?.message ?? 'Баг үүсгэхэд алдаа гарлаа' };
+  if (error || !team) return { error: error?.message ?? t('createFailed') };
 
   const logo = await uploadImageIfProvided(admin, formData, 'logo', LOGO_BUCKET, `team-${team.id}`);
   if (logo.error) return { error: logo.error };
@@ -109,9 +112,10 @@ export async function updateTeam(
   formData: FormData
 ): Promise<{ error?: string }> {
   await assertCanManageClub(clubId);
+  const t = await getTranslations('teams');
   const name = String(formData.get('name') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim() || null;
-  if (!name) return { error: 'Багийн нэр оруулна уу' };
+  if (!name) return { error: t('nameRequired') };
 
   const admin = createAdminClient();
 

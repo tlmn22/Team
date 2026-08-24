@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 import { toast } from '@/components/Toast';
 import { grantLogin, type UserRow } from '@/lib/actions/users';
@@ -14,6 +15,8 @@ export default function GrantLoginModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations('users');
+  const tCommon = useTranslations('common');
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(formData: FormData) {
@@ -22,21 +25,18 @@ export default function GrantLoginModal({
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast('Login эрх олгогдлоо');
+        toast(t('grantedLogin'));
         onSaved();
       }
     });
   }
 
   return (
-    <Modal open onClose={onClose} title={`${user.name} — Login олгох`}>
+    <Modal open onClose={onClose} title={t('grantLoginTitle', { name: user.name })}>
       <form action={handleSubmit} className="space-y-4">
-        <p className="text-sm text-gray-500">
-          Энэ хэрэглэгч одоогоор зөвхөн профайл бөгөөд системд нэвтэрч чадахгүй. И-мэйл болон
-          нууц үг тохируулж login эрх олгоно.
-        </p>
+        <p className="text-sm text-gray-500">{t('grantLoginHint')}</p>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">И-мэйл</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('email')}</label>
           <input
             name="email"
             type="email"
@@ -45,7 +45,7 @@ export default function GrantLoginModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Нууц үг</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('password')}</label>
           <input
             name="password"
             type="password"
@@ -59,7 +59,7 @@ export default function GrantLoginModal({
           disabled={pending}
           className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-medium rounded-lg py-2 text-sm transition"
         >
-          {pending ? 'Хадгалж байна...' : 'Login олгох'}
+          {pending ? tCommon('saving') : t('grantLoginSubmit')}
         </button>
       </form>
     </Modal>

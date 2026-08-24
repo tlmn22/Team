@@ -3,14 +3,8 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import EventFormModal, { type EventFormValues } from './EventFormModal';
-
-const TYPE_LABEL: Record<string, string> = {
-  practice: 'Бэлтгэл',
-  meeting: 'Уулзалт',
-  game: 'Тоглолт',
-  other: 'Бусад',
-};
 
 const TYPE_DOT: Record<string, string> = {
   practice: 'bg-orange-500',
@@ -18,22 +12,6 @@ const TYPE_DOT: Record<string, string> = {
   game: 'bg-purple-500',
   other: 'bg-gray-400',
 };
-
-const WEEKDAYS = ['Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бя', 'Ня'];
-const MONTH_LABEL = [
-  '1 сар',
-  '2 сар',
-  '3 сар',
-  '4 сар',
-  '5 сар',
-  '6 сар',
-  '7 сар',
-  '8 сар',
-  '9 сар',
-  '10 сар',
-  '11 сар',
-  '12 сар',
-];
 
 function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -52,6 +30,11 @@ export default function EventsManager({
   canManage: boolean;
   events: EventFormValues[];
 }) {
+  const t = useTranslations('events');
+  const tEventTypes = useTranslations('eventTypes');
+  const tCommon = useTranslations('common');
+  const MONTH_LABEL = tCommon.raw('months') as string[];
+  const WEEKDAYS = tCommon.raw('weekdaysShort') as string[];
   const router = useRouter();
   const today = todayStr();
   const [cursor, setCursor] = useState(() => {
@@ -102,13 +85,13 @@ export default function EventsManager({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Хуваарь</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {canManage && (
           <button
             onClick={() => openCreate(selectedDate)}
             className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
           >
-            + Эвент нэмэх
+            {t('add')}
           </button>
         )}
       </div>
@@ -118,7 +101,7 @@ export default function EventsManager({
           <button
             onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
             className="p-1 rounded-lg hover:bg-gray-50 text-gray-500 text-sm"
-            aria-label="Өмнөх сар"
+            aria-label={t('prevMonth')}
           >
             ‹
           </button>
@@ -134,13 +117,13 @@ export default function EventsManager({
               }}
               className="text-[11px] text-orange-600 hover:underline"
             >
-              Өнөөдөр
+              {t('today')}
             </button>
           </div>
           <button
             onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
             className="p-1 rounded-lg hover:bg-gray-50 text-gray-500 text-sm"
-            aria-label="Дараах сар"
+            aria-label={t('nextMonth')}
           >
             ›
           </button>
@@ -201,12 +184,12 @@ export default function EventsManager({
               onClick={() => openCreate(selectedDate)}
               className="text-xs text-orange-600 hover:underline font-medium"
             >
-              + Энэ өдөрт нэмэх
+              {t('addToDay')}
             </button>
           )}
         </div>
         {selectedEvents.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-6">Эвент алга</p>
+          <p className="text-gray-400 text-sm text-center py-6">{t('empty')}</p>
         ) : (
           <div className="space-y-1">
             {selectedEvents.map((e) => (
@@ -222,7 +205,7 @@ export default function EventsManager({
                       {e.title}
                     </div>
                     <div className="text-gray-400 text-xs mt-0.5">
-                      {TYPE_LABEL[e.type] ?? e.type}
+                      {tEventTypes.has(e.type) ? tEventTypes(e.type) : e.type}
                       {e.time ? ` · ${e.time.slice(0, 5)}` : ''}
                       {e.location ? ` · ${e.location}` : ''}
                     </div>

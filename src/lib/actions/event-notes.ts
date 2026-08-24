@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import DOMPurify from 'isomorphic-dompurify';
+import { getTranslations } from 'next-intl/server';
 import { requireUser, canManageTeam } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -13,11 +14,12 @@ export async function addEventNote(
   content: string
 ): Promise<{ error?: string }> {
   const user = await requireUser();
-  if (!(await canManageTeam(teamId))) return { error: 'Энэ багийг удирдах эрхгүй байна' };
+  const t = await getTranslations('events');
+  if (!(await canManageTeam(teamId))) return { error: t('cannotManageTeam') };
 
   const clean = DOMPurify.sanitize(content, { ALLOWED_TAGS, ALLOWED_ATTR: ['href', 'target', 'rel'] });
   const isEmpty = clean.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim().length === 0;
-  if (isEmpty) return { error: 'Тэмдэглэл оруулна уу' };
+  if (isEmpty) return { error: t('noteRequired') };
 
   const admin = createAdminClient();
   const { error } = await admin
@@ -35,7 +37,8 @@ export async function deleteEventNote(
   teamId: number
 ): Promise<{ error?: string }> {
   await requireUser();
-  if (!(await canManageTeam(teamId))) return { error: 'Энэ багийг удирдах эрхгүй байна' };
+  const t = await getTranslations('events');
+  if (!(await canManageTeam(teamId))) return { error: t('cannotManageTeam') };
 
   const admin = createAdminClient();
   const { error } = await admin.from('event_notes').delete().eq('id', noteId).eq('event_id', eventId);

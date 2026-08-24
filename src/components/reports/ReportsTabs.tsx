@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import AttendanceReport, {
   type ReportPlayer,
   type ReportEvent,
@@ -24,12 +25,6 @@ export interface ContentStats {
 
 const TABS = ['attendance', 'players', 'content'] as const;
 type Tab = (typeof TABS)[number];
-
-const TAB_LABEL: Record<Tab, string> = {
-  attendance: 'Ирц',
-  players: 'Тоглогчид',
-  content: 'Контент',
-};
 
 function Avatar({ name, photoUrl }: { name: string; photoUrl: string | null }) {
   return (
@@ -59,22 +54,29 @@ export default function ReportsTabs({
   players: PlayerRow[];
   content: ContentStats;
 }) {
+  const t = useTranslations('reports');
+  const tRoles = useTranslations('roles');
+  const TAB_LABEL: Record<Tab, string> = {
+    attendance: t('tabAttendance'),
+    players: t('tabPlayers'),
+    content: t('tabContent'),
+  };
   const [tab, setTab] = useState<Tab>('attendance');
 
   return (
     <div className="space-y-4">
       <div className="flex gap-1 border-b border-gray-100">
-        {TABS.map((t) => (
+        {TABS.map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
-              tab === t
+              tab === tabKey
                 ? 'border-orange-500 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {TAB_LABEL[t]}
+            {TAB_LABEL[tabKey]}
           </button>
         ))}
       </div>
@@ -92,7 +94,7 @@ export default function ReportsTabs({
                 <div>
                   <span className="text-sm text-gray-800">{p.name}</span>
                   <span className="text-xs text-gray-400 ml-2">
-                    {p.role === 'coach' ? 'Дасгалжуулагч' : (p.position ?? '')}
+                    {p.role === 'coach' ? tRoles('coach') : (p.position ?? '')}
                   </span>
                 </div>
               </div>
@@ -102,7 +104,7 @@ export default function ReportsTabs({
             </div>
           ))}
           {players.length === 0 && (
-            <p className="text-gray-400 text-sm text-center py-8">Гишүүн алга</p>
+            <p className="text-gray-400 text-sm text-center py-8">{t('noMembers')}</p>
           )}
         </div>
       )}
@@ -110,15 +112,15 @@ export default function ReportsTabs({
       {tab === 'content' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 grid grid-cols-2 gap-4">
           <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-sm text-gray-500">Нийт пост</div>
+            <div className="text-sm text-gray-500">{t('totalPosts')}</div>
             <div className="text-2xl font-bold text-gray-900">{content.totalPosts}</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-sm text-gray-500">Нийт үзэлт</div>
+            <div className="text-sm text-gray-500">{t('totalViews')}</div>
             <div className="text-2xl font-bold text-gray-900">{content.totalViews}</div>
           </div>
           <div className="col-span-2 bg-gray-50 rounded-lg p-4">
-            <div className="text-sm text-gray-500 mb-2">Төрлөөр</div>
+            <div className="text-sm text-gray-500 mb-2">{t('byType')}</div>
             <div className="text-sm text-gray-700 space-y-1">
               {Object.entries(content.byType).map(([type, count]) => (
                 <div key={type} className="flex justify-between">

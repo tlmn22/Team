@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 import { toast } from '@/components/Toast';
 import {
@@ -18,7 +19,6 @@ const ROLE_BADGE: Record<string, string> = {
   manager: 'bg-blue-100 text-blue-700',
   owner: 'bg-purple-100 text-purple-700',
 };
-const ROLE_LABEL: Record<string, string> = { manager: 'Менежер', owner: 'Эзэн' };
 
 export default function ManagersModal({
   club,
@@ -29,6 +29,9 @@ export default function ManagersModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const t = useTranslations('clubs');
+  const tRoles = useTranslations('roles');
+  const tCommon = useTranslations('common');
   const [managers, setManagers] = useState<ClubManager[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'search' | 'create'>('search');
@@ -57,10 +60,10 @@ export default function ManagersModal({
       setResults([]);
       return;
     }
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       searchUsers(q).then(setResults);
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [query]);
 
   function handleAddExisting(userId: string) {
@@ -69,7 +72,7 @@ export default function ManagersModal({
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast('Менежер нэмэгдлээ');
+        toast(t('managerAdded'));
         setQuery('');
         setResults([]);
         refresh();
@@ -80,7 +83,7 @@ export default function ManagersModal({
 
   function handleCreateNew() {
     if (!newName.trim()) {
-      toast('Нэр оруулна уу', 'error');
+      toast(t('nameRequired'), 'error');
       return;
     }
     startTransition(async () => {
@@ -88,7 +91,7 @@ export default function ManagersModal({
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast('Менежер үүслээ');
+        toast(t('managerCreated'));
         setNewName('');
         setNewPhone('');
         refresh();
@@ -98,13 +101,13 @@ export default function ManagersModal({
   }
 
   function handleRemove(userId: string) {
-    if (!confirm('Энэ менежерийг хасах уу?')) return;
+    if (!confirm(t('confirmRemoveManager'))) return;
     startTransition(async () => {
       const res = await removeManager(club.id, userId);
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast('Хасагдлаа');
+        toast(t('removed'));
         refresh();
         onChanged();
       }
@@ -112,16 +115,16 @@ export default function ManagersModal({
   }
 
   return (
-    <Modal open onClose={onClose} title={`${club.name} — Менежерүүд`} maxWidth="max-w-lg">
+    <Modal open onClose={onClose} title={t('managersModalTitle', { name: club.name })} maxWidth="max-w-lg">
       <div className="space-y-4">
         <div>
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            Одоогийн менежерүүд
+            {t('currentManagers')}
           </h3>
           {loading ? (
-            <p className="text-sm text-gray-400">Ачаалж байна...</p>
+            <p className="text-sm text-gray-400">{tCommon('loading')}</p>
           ) : managers.length === 0 ? (
-            <p className="text-sm text-gray-400">Менежер алга</p>
+            <p className="text-sm text-gray-400">{t('noManagers')}</p>
           ) : (
             <div className="space-y-1">
               {managers.map((m) => (
@@ -132,14 +135,14 @@ export default function ManagersModal({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${ROLE_BADGE[m.role]}`}>
-                      {ROLE_LABEL[m.role]}
+                      {tRoles(m.role)}
                     </span>
                     <button
                       onClick={() => handleRemove(m.user_id)}
                       disabled={pending}
                       className="text-red-500 hover:text-red-700 text-xs disabled:opacity-50"
                     >
-                      Хасах
+                      {tCommon('remove')}
                     </button>
                   </div>
                 </div>
@@ -150,33 +153,33 @@ export default function ManagersModal({
 
         <div className="border-t border-gray-100 pt-4">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            Шинэ менежер нэмэх
+            {t('addNewManager')}
           </h3>
 
           <div className="flex items-center gap-3 mb-3">
-            <label className="text-xs text-gray-500">Эрх:</label>
+            <label className="text-xs text-gray-500">{t('roleLabel')}</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as 'manager' | 'owner')}
               className="text-sm border border-gray-300 rounded-lg px-2 py-1"
             >
-              <option value="manager">Менежер</option>
-              <option value="owner">Эзэн</option>
+              <option value="manager">{tRoles('manager')}</option>
+              <option value="owner">{tRoles('owner')}</option>
             </select>
           </div>
 
           <div className="flex gap-1 border-b border-gray-100 mb-3">
-            {(['search', 'create'] as const).map((t) => (
+            {(['search', 'create'] as const).map((tab_) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
+                key={tab_}
+                onClick={() => setTab(tab_)}
                 className={`px-3 py-1.5 text-sm font-medium border-b-2 -mb-px transition ${
-                  tab === t
+                  tab === tab_
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {t === 'search' ? 'Байгаа хэрэглэгчээс' : 'Шинээр үүсгэх'}
+                {tab_ === 'search' ? t('fromExisting') : t('createNew')}
               </button>
             ))}
           </div>
@@ -185,7 +188,7 @@ export default function ManagersModal({
             <div>
               <input
                 type="text"
-                placeholder="Нэр, утас, и-мэйлээр хайх..."
+                placeholder={t('searchPlaceholder')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -210,14 +213,14 @@ export default function ManagersModal({
             <div className="space-y-2">
               <input
                 type="text"
-                placeholder="Нэр"
+                placeholder={t('namePlaceholder')}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
               <input
                 type="text"
-                placeholder="Утас (сонголттой)"
+                placeholder={t('phonePlaceholder')}
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -227,11 +230,9 @@ export default function ManagersModal({
                 disabled={pending}
                 className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-medium rounded-lg py-2 text-sm transition"
               >
-                Үүсгэж нэмэх
+                {t('createAndAdd')}
               </button>
-              <p className="text-xs text-gray-400">
-                Шинээр үүсгэсэн хэрэглэгч зөвхөн профайл байх бөгөөд одоогоор нэвтрэх эрхгүй.
-              </p>
+              <p className="text-xs text-gray-400">{t('createHint')}</p>
             </div>
           )}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 import { toast } from '@/components/Toast';
 import { createTeam, updateTeam, type TeamWithCounts } from '@/lib/actions/teams';
@@ -16,6 +17,8 @@ export default function TeamFormModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations('teams');
+  const tCommon = useTranslations('common');
   const [pending, startTransition] = useTransition();
   const [preview, setPreview] = useState<string | null>(team?.logo_url ?? null);
 
@@ -33,24 +36,24 @@ export default function TeamFormModal({
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast(team ? 'Баг шинэчлэгдлээ' : 'Баг үүслээ');
+        toast(team ? t('updated') : t('created'));
         onSaved();
       }
     });
   }
 
   return (
-    <Modal open onClose={onClose} title={team ? 'Баг засах' : 'Баг нэмэх'}>
+    <Modal open onClose={onClose} title={team ? t('editTitle') : t('createTitle')}>
       <form action={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Лого</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('logo')}</label>
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
               {preview ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={preview} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-gray-400 text-xs">Лого</span>
+                <span className="text-gray-400 text-xs">{t('logoPlaceholder')}</span>
               )}
             </div>
             <input
@@ -64,7 +67,7 @@ export default function TeamFormModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Нэр</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
           <input
             name="name"
             type="text"
@@ -74,7 +77,7 @@ export default function TeamFormModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Тайлбар</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
           <textarea
             name="description"
             rows={3}
@@ -87,7 +90,7 @@ export default function TeamFormModal({
           disabled={pending}
           className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-medium rounded-lg py-2 text-sm transition"
         >
-          {pending ? 'Хадгалж байна...' : 'Хадгалах'}
+          {pending ? tCommon('saving') : tCommon('save')}
         </button>
       </form>
     </Modal>

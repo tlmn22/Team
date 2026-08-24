@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 import { requireUser, canManageTeam } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { uploadImageIfProvided } from '@/lib/actions/upload-image';
@@ -20,7 +21,8 @@ export interface TeamMember {
 async function assertCanManageTeam(teamId: number) {
   await requireUser();
   if (!(await canManageTeam(teamId))) {
-    throw new Error('Энэ багийг удирдах эрхгүй байна');
+    const t = await getTranslations('members');
+    throw new Error(t('cannotManageTeam'));
   }
 }
 
@@ -53,14 +55,16 @@ export async function addMember(
   formData: FormData
 ): Promise<{ error?: string }> {
   await assertCanManageTeam(teamId);
+  const t = await getTranslations('members');
+  const tCommon = await getTranslations('common');
   const name = String(formData.get('name') ?? '').trim();
   const phone = String(formData.get('phone') ?? '').trim();
   const role = String(formData.get('role') ?? 'player');
   const jerseyRaw = String(formData.get('jersey_number') ?? '').trim();
   const position = String(formData.get('position') ?? '').trim() || null;
 
-  if (!name) return { error: 'Нэр оруулна уу' };
-  if (role !== 'coach' && role !== 'player') return { error: 'Буруу эрх' };
+  if (!name) return { error: tCommon('nameRequired') };
+  if (role !== 'coach' && role !== 'player') return { error: t('invalidRole') };
 
   const admin = createAdminClient();
   const { data: newUserId, error } = await admin.rpc('create_team_member', {
@@ -89,11 +93,12 @@ export async function updateMember(
   formData: FormData
 ): Promise<{ error?: string }> {
   await assertCanManageTeam(teamId);
+  const t = await getTranslations('members');
   const role = String(formData.get('role') ?? 'player');
   const jerseyRaw = String(formData.get('jersey_number') ?? '').trim();
   const position = String(formData.get('position') ?? '').trim() || null;
 
-  if (role !== 'coach' && role !== 'player') return { error: 'Буруу эрх' };
+  if (role !== 'coach' && role !== 'player') return { error: t('invalidRole') };
 
   const admin = createAdminClient();
 

@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { requireUser, getPrimaryRole, getMyTeams, getCurrentTeamId } from '@/lib/auth';
 import Sidebar, { type NavItem } from '@/components/Sidebar';
 import {
@@ -26,23 +27,24 @@ function navVisibility(role: string) {
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const [role, myTeams, currentTeamId] = await Promise.all([
+  const [role, myTeams, currentTeamId, t] = await Promise.all([
     getPrimaryRole(),
     getMyTeams(),
     getCurrentTeamId(),
+    getTranslations('sidebar'),
   ]);
   const nav = navVisibility(role);
 
   const iconClass = 'w-[18px] h-[18px]';
   const allItems: (NavItem & { show: boolean })[] = [
-    { href: '/dashboard', label: 'Нүүр', icon: <IconDashboard className={iconClass} />, show: true },
-    { href: '/clubs', label: 'Клубууд', icon: <IconClubs className={iconClass} />, show: nav.showClubs },
-    { href: '/teams', label: 'Багууд', icon: <IconTeams className={iconClass} />, show: nav.showTeams },
-    { href: '/members', label: 'Гишүүд', icon: <IconMembers className={iconClass} />, show: nav.showMembers },
-    { href: '/events', label: 'Хуваарь', icon: <IconEvents className={iconClass} />, show: nav.showEvents },
-    { href: '/posts', label: 'Мэдээ', icon: <IconPosts className={iconClass} />, show: nav.showPosts },
-    { href: '/reports', label: 'Тайлан', icon: <IconReports className={iconClass} />, show: nav.showReports },
-    { href: '/users', label: 'Хэрэглэгчид', icon: <IconUsers className={iconClass} />, show: nav.showUsers },
+    { href: '/dashboard', label: t('dashboard'), icon: <IconDashboard className={iconClass} />, show: true },
+    { href: '/clubs', label: t('clubs'), icon: <IconClubs className={iconClass} />, show: nav.showClubs },
+    { href: '/teams', label: t('teams'), icon: <IconTeams className={iconClass} />, show: nav.showTeams },
+    { href: '/members', label: t('members'), icon: <IconMembers className={iconClass} />, show: nav.showMembers },
+    { href: '/events', label: t('events'), icon: <IconEvents className={iconClass} />, show: nav.showEvents },
+    { href: '/posts', label: t('posts'), icon: <IconPosts className={iconClass} />, show: nav.showPosts },
+    { href: '/reports', label: t('reports'), icon: <IconReports className={iconClass} />, show: nav.showReports },
+    { href: '/users', label: t('users'), icon: <IconUsers className={iconClass} />, show: nav.showUsers },
   ];
   const navItems: NavItem[] = allItems.filter((item) => item.show);
 

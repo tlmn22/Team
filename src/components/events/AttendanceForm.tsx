@@ -2,9 +2,12 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { toast } from '@/components/Toast';
 import { saveAttendance, type AttendanceStatus } from '@/lib/actions/attendance';
-import { STATUS_LABEL, STATUS_COLOR } from '@/lib/attendance-status';
+import { STATUS_COLOR } from '@/lib/attendance-status';
+
+const STATUSES: AttendanceStatus[] = ['present', 'late', 'excused', 'absent'];
 
 export interface AttendanceMember {
   userId: string;
@@ -41,6 +44,9 @@ export default function AttendanceForm({
   members: AttendanceMember[];
   canManage: boolean;
 }) {
+  const t = useTranslations('events');
+  const tStatus = useTranslations('events.status');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [rows, setRows] = useState(
     members.map((m) => ({ userId: m.userId, status: m.status ?? 'present', notes: m.notes ?? '' }))
@@ -61,14 +67,14 @@ export default function AttendanceForm({
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast('Ирц хадгалагдлаа');
+        toast(t('attendanceSaved'));
         router.refresh();
       }
     });
   }
 
   if (members.length === 0) {
-    return <p className="text-gray-400 text-sm text-center py-4">Багийн гишүүн алга</p>;
+    return <p className="text-gray-400 text-sm text-center py-4">{t('noMembers')}</p>;
   }
 
   if (!canManage) {
@@ -77,8 +83,8 @@ export default function AttendanceForm({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-gray-100">
-              <th className="py-2 pr-3 text-xs font-medium text-gray-400">Гишүүн</th>
-              <th className="py-2 text-xs font-medium text-gray-400">Төлөв</th>
+              <th className="py-2 pr-3 text-xs font-medium text-gray-400">{t('member')}</th>
+              <th className="py-2 text-xs font-medium text-gray-400">{t('statusLabel')}</th>
             </tr>
           </thead>
           <tbody>
@@ -93,7 +99,7 @@ export default function AttendanceForm({
                       m.status ? STATUS_COLOR[m.status] : 'bg-gray-100 text-gray-400'
                     }`}
                   >
-                    {m.status ? STATUS_LABEL[m.status] : 'Тэмдэглээгүй'}
+                    {m.status ? tStatus(m.status) : t('notMarked')}
                   </span>
                 </td>
               </tr>
@@ -110,9 +116,9 @@ export default function AttendanceForm({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-gray-100">
-              <th className="py-2 pr-3 text-xs font-medium text-gray-400">Гишүүн</th>
-              <th className="py-2 pr-3 text-xs font-medium text-gray-400">Төлөв</th>
-              <th className="py-2 text-xs font-medium text-gray-400">Тэмдэглэл</th>
+              <th className="py-2 pr-3 text-xs font-medium text-gray-400">{t('member')}</th>
+              <th className="py-2 pr-3 text-xs font-medium text-gray-400">{t('statusLabel')}</th>
+              <th className="py-2 text-xs font-medium text-gray-400">{t('notesTitle')}</th>
             </tr>
           </thead>
           <tbody>
@@ -129,9 +135,9 @@ export default function AttendanceForm({
                       onChange={(e) => setRow(m.userId, { status: e.target.value as AttendanceStatus })}
                       className="text-xs rounded-lg border border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
-                      {(Object.keys(STATUS_LABEL) as AttendanceStatus[]).map((s) => (
+                      {STATUSES.map((s) => (
                         <option key={s} value={s}>
-                          {STATUS_LABEL[s]}
+                          {tStatus(s)}
                         </option>
                       ))}
                     </select>
@@ -141,7 +147,7 @@ export default function AttendanceForm({
                       type="text"
                       value={row.notes}
                       onChange={(e) => setRow(m.userId, { notes: e.target.value })}
-                      placeholder="Тэмдэглэл"
+                      placeholder={t('notesTitle')}
                       className="text-xs rounded-lg border border-gray-300 px-2 py-1.5 w-full min-w-[360px] focus:outline-none focus:ring-2 focus:ring-orange-500"
                     />
                   </td>
@@ -156,7 +162,7 @@ export default function AttendanceForm({
         disabled={pending}
         className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-medium rounded-lg py-2 text-sm transition"
       >
-        {pending ? 'Хадгалж байна...' : 'Ирц хадгалах'}
+        {pending ? tCommon('saving') : t('saveAttendance')}
       </button>
     </div>
   );

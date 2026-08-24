@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { toast } from '@/components/Toast';
 import RichTextEditor from '@/components/RichTextEditor';
 import { addEventNote, deleteEventNote } from '@/lib/actions/event-notes';
@@ -23,6 +24,8 @@ export default function EventNotesForm({
   notes: EventNote[];
   canManage: boolean;
 }) {
+  const t = useTranslations('events');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [content, setContent] = useState('');
   const [editorKey, setEditorKey] = useState(0);
@@ -42,7 +45,7 @@ export default function EventNotesForm({
   }
 
   function handleDelete(noteId: number) {
-    if (!confirm('Энэ тэмдэглэлийг устгах уу?')) return;
+    if (!confirm(t('confirmDeleteNote'))) return;
     startTransition(async () => {
       const res = await deleteEventNote(noteId, eventId, teamId);
       if (res.error) {
@@ -61,14 +64,14 @@ export default function EventNotesForm({
             key={editorKey}
             data={content}
             onChange={setContent}
-            placeholder="Бэлтгэлийн тэмдэглэл бичих..."
+            placeholder={t('notesPlaceholder')}
           />
           <button
             onClick={handleSubmit}
             disabled={pending}
             className="bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
           >
-            Нэмэх
+            {tCommon('add')}
           </button>
         </div>
       )}
@@ -92,13 +95,13 @@ export default function EventNotesForm({
                 disabled={pending}
                 className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 flex-shrink-0"
               >
-                Устгах
+                {tCommon('delete')}
               </button>
             )}
           </div>
         ))}
         {notes.length === 0 && (
-          <p className="text-gray-400 text-sm text-center py-4">Тэмдэглэл алга</p>
+          <p className="text-gray-400 text-sm text-center py-4">{t('noNotes')}</p>
         )}
       </div>
     </div>

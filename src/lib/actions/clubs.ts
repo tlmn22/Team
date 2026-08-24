@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 import { requireUser, isSuperAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -30,7 +31,8 @@ export interface UserSearchResult {
 async function assertSuperAdmin() {
   await requireUser();
   if (!(await isSuperAdmin())) {
-    throw new Error('Зөвхөн ерөнхий админ энэ үйлдлийг хийх боломжтой');
+    const t = await getTranslations('common');
+    throw new Error(t('forbidden'));
   }
 }
 
@@ -61,9 +63,10 @@ export async function listClubs(): Promise<ClubWithCounts[]> {
 
 export async function createClub(formData: FormData): Promise<{ error?: string }> {
   await assertSuperAdmin();
+  const t = await getTranslations('clubs');
   const name = String(formData.get('name') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim() || null;
-  if (!name) return { error: 'Клубын нэр оруулна уу' };
+  if (!name) return { error: t('nameRequired') };
 
   const user = await requireUser();
   const admin = createAdminClient();
@@ -79,9 +82,10 @@ export async function updateClub(
   formData: FormData
 ): Promise<{ error?: string }> {
   await assertSuperAdmin();
+  const t = await getTranslations('clubs');
   const name = String(formData.get('name') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim() || null;
-  if (!name) return { error: 'Клубын нэр оруулна уу' };
+  if (!name) return { error: t('nameRequired') };
 
   const admin = createAdminClient();
   const { error } = await admin.from('clubs').update({ name, description }).eq('id', clubId);
@@ -153,8 +157,9 @@ export async function createManagerUser(
   role: 'manager' | 'owner'
 ): Promise<{ error?: string }> {
   await assertSuperAdmin();
+  const t = await getTranslations('common');
   const trimmedName = name.trim();
-  if (!trimmedName) return { error: 'Нэр оруулна уу' };
+  if (!trimmedName) return { error: t('nameRequired') };
 
   const admin = createAdminClient();
   const { error } = await admin.rpc('create_club_manager', {

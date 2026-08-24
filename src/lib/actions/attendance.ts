@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 import { requireUser, canManageTeam } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -19,9 +20,10 @@ export async function saveAttendance(
   entries: AttendanceEntry[]
 ): Promise<{ error?: string }> {
   await requireUser();
-  if (!(await canManageTeam(teamId))) return { error: 'Энэ багийг удирдах эрхгүй байна' };
+  const t = await getTranslations('events');
+  if (!(await canManageTeam(teamId))) return { error: t('cannotManageTeam') };
   if (entries.length === 0) return {};
-  if (entries.some((e) => !STATUSES.includes(e.status))) return { error: 'Буруу төлөв' };
+  if (entries.some((e) => !STATUSES.includes(e.status))) return { error: t('invalidStatus') };
 
   const admin = createAdminClient();
   const { error } = await admin.from('event_attendance').upsert(

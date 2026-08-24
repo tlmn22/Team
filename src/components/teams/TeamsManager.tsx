@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { toast } from '@/components/Toast';
 import { switchTeam } from '@/lib/actions/team-context';
 import { deleteTeam, type ManageableClub, type TeamWithCounts } from '@/lib/actions/teams';
@@ -17,6 +18,8 @@ export default function TeamsManager({
   currentClubId: number;
   teams: TeamWithCounts[];
 }) {
+  const t = useTranslations('teams');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [formTarget, setFormTarget] = useState<TeamWithCounts | 'new' | null>(null);
   const [pending, startTransition] = useTransition();
@@ -26,13 +29,13 @@ export default function TeamsManager({
   }
 
   function handleDelete(team: TeamWithCounts) {
-    if (!confirm(`"${team.name}" багийг устгах уу?`)) return;
+    if (!confirm(t('confirmDelete', { name: team.name }))) return;
     startTransition(async () => {
       const res = await deleteTeam(team.id, currentClubId);
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast('Баг устгагдлаа');
+        toast(t('deleted'));
         refresh();
       }
     });
@@ -48,13 +51,13 @@ export default function TeamsManager({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Багууд</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {currentClubId > 0 && (
           <button
             onClick={() => setFormTarget('new')}
             className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
           >
-            + Баг нэмэх
+            {t('add')}
           </button>
         )}
       </div>
@@ -80,12 +83,12 @@ export default function TeamsManager({
       {clubs.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <p className="text-gray-400 text-sm text-center py-8">
-            Танд удирдах клуб алга.
+            {t('noManageableClubs')}
           </p>
         </div>
       ) : teams.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <p className="text-gray-400 text-sm text-center py-8">Баг алга</p>
+          <p className="text-gray-400 text-sm text-center py-8">{t('empty')}</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -103,7 +106,7 @@ export default function TeamsManager({
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-gray-900 text-sm truncate">{team.name}</p>
                   <p className="text-gray-400 text-xs mt-0.5">
-                    {team.coach_count} дасгалжуулагч · {team.player_count} тоглогч
+                    {t('coachesAndPlayers', { coaches: team.coach_count, players: team.player_count })}
                   </p>
                 </div>
               </div>
@@ -116,20 +119,20 @@ export default function TeamsManager({
                   disabled={pending}
                   className="flex-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg py-1.5 transition disabled:opacity-50"
                 >
-                  Гишүүд
+                  {t('members')}
                 </button>
                 <button
                   onClick={() => setFormTarget(team)}
                   className="flex-1 text-xs font-medium text-gray-600 hover:bg-gray-50 rounded-lg py-1.5 transition"
                 >
-                  Засах
+                  {tCommon('edit')}
                 </button>
                 <button
                   onClick={() => handleDelete(team)}
                   disabled={pending}
                   className="flex-1 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg py-1.5 transition disabled:opacity-50"
                 >
-                  Устгах
+                  {tCommon('delete')}
                 </button>
               </div>
             </div>

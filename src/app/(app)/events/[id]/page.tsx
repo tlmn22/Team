@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { requireUser, canViewTeam, canManageTeam } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import AttendanceForm, { type AttendanceMember } from '@/components/events/AttendanceForm';
@@ -7,15 +8,10 @@ import type { AttendanceStatus } from '@/lib/actions/attendance';
 import EventNotesForm, { type EventNote } from '@/components/events/EventNotesForm';
 import EventDetailActions from '@/components/events/EventDetailActions';
 
-const TYPE_LABEL: Record<string, string> = {
-  practice: 'Бэлтгэл',
-  meeting: 'Уулзалт',
-  game: 'Тоглолт',
-  other: 'Бусад',
-};
-
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireUser();
+  const t = await getTranslations('events');
+  const tEventTypes = await getTranslations('eventTypes');
   const { id } = await params;
   const eventId = Number(id);
   if (!Number.isFinite(eventId)) notFound();
@@ -66,7 +62,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   return (
     <div className="space-y-6">
       <Link href="/events" className="text-sm text-gray-400 hover:text-orange-600">
-        ← Хуваарь
+        {t('back')}
       </Link>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
@@ -75,7 +71,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           {canManage && <EventDetailActions event={event} teamId={event.team_id} />}
         </div>
         <div className="text-sm text-gray-500 mt-1">
-          {TYPE_LABEL[event.type] ?? event.type} · {event.date}
+          {tEventTypes.has(event.type) ? tEventTypes(event.type) : event.type} · {event.date}
           {event.time ? ` · ${event.time.slice(0, 5)}` : ''}
           {event.location ? ` · ${event.location}` : ''}
         </div>
@@ -83,7 +79,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-3">Ирц</h2>
+        <h2 className="font-semibold text-gray-900 mb-3">{t('attendanceTitle')}</h2>
         <AttendanceForm
           eventId={event.id}
           teamId={event.team_id}
@@ -93,7 +89,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-3">Тэмдэглэл</h2>
+        <h2 className="font-semibold text-gray-900 mb-3">{t('notesTitle')}</h2>
         <EventNotesForm
           eventId={event.id}
           teamId={event.team_id}

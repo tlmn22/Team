@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import { switchTeam } from '@/lib/actions/team-context';
 import type { MyTeam } from '@/lib/auth';
 
@@ -13,6 +14,7 @@ export default function TeamSwitcher({
   currentTeamId: number | null;
   dark?: boolean;
 }) {
+  const t = useTranslations('sidebar');
   const [pending, startTransition] = useTransition();
 
   if (teams.length < 2) return null;
@@ -32,11 +34,11 @@ export default function TeamSwitcher({
       }}
     >
       <option value="" disabled>
-        — Баг сонгох —
+        {t('noTeamChosen')}
       </option>
-      {teams.map((t) => (
-        <option key={t.id} value={t.id}>
-          {t.name} {t.club_name ? `(${t.club_name})` : ''}
+      {teams.map((team) => (
+        <option key={team.id} value={team.id}>
+          {team.name} {team.club_name ? `(${team.club_name})` : ''}
         </option>
       ))}
     </select>

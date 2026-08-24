@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from '@/components/Toast';
 import type { AttendanceStatus } from '@/lib/actions/attendance';
 
@@ -23,21 +24,9 @@ export interface ReportAttendanceRow {
   status: AttendanceStatus;
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  practice: 'Бэлтгэл',
-  meeting: 'Уулзалт',
-  game: 'Тоглолт',
-  other: 'Бусад',
-};
-
-const PERIODS = [
-  { id: '7', label: '7 хоног', title: 'Сүүлийн 7 хоног', days: 7 },
-  { id: '30', label: '30 хоног', title: 'Сүүлийн 30 хоног', days: 30 },
-  { id: 'season', label: 'Сезон', title: 'Бүтэн сезон', days: null as number | null },
-];
-
 const RISK_THRESHOLD = 75;
 
+type PeriodId = '7' | '30' | 'season';
 type Sort = 'risk' | 'pct' | 'name';
 
 interface Cell {
@@ -113,13 +102,6 @@ function cellClass(status: AttendanceStatus | null): string {
   return 'bg-gray-50';
 }
 
-const STATUS_TITLE: Record<AttendanceStatus, string> = {
-  present: 'Ирсэн',
-  late: 'Хоцорсон',
-  excused: 'Чөлөөтэй',
-  absent: 'Тасалсан',
-};
-
 function Avatar({ name, photoUrl, size = 26 }: { name: string; photoUrl: string | null; size?: number }) {
   return (
     <div
@@ -147,11 +129,23 @@ export default function AttendanceReport({
   events: ReportEvent[];
   attendance: ReportAttendanceRow[];
 }) {
-  const [periodId, setPeriodId] = useState('30');
+  const t = useTranslations('reports');
+  const tEventTypes = useTranslations('eventTypes');
+  const tCommon = useTranslations('common');
+  const [periodId, setPeriodId] = useState<PeriodId>('30');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<Sort>('risk');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [highlightedEventId, setHighlightedEventId] = useState<number | null>(null);
+
+  const eventTypeLabel = (type: string) => (tEventTypes.has(type) ? tEventTypes(type) : type);
+  const statusTitle = (status: AttendanceStatus) => t(status);
+
+  const PERIODS: { id: PeriodId; label: string; title: string; days: number | null }[] = [
+    { id: '7', label: t('period7'), title: t('period7Title'), days: 7 },
+    { id: '30', label: t('period30'), title: t('period30Title'), days: 30 },
+    { id: 'season', label: t('periodSeason'), title: t('periodSeasonTitle'), days: null },
+  ];
 
   const period = PERIODS.find((p) => p.id === periodId) ?? PERIODS[1];
 
@@ -258,7 +252,14 @@ export default function AttendanceReport({
   }, [selectedId, playerStats, prevRangeEvents, attMap]);
 
   function handleExport() {
-    const header = ['Тоглогч', 'Ирц (%)', 'Ирсэн', 'Хоцорсон', 'Чөлөөтэй', 'Тасалсан'];
+    const header = [
+      t('csvHeaderName'),
+      t('csvHeaderPct'),
+      t('csvHeaderPresent'),
+      t('csvHeaderLate'),
+      t('csvHeaderExcused'),
+      t('csvHeaderAbsent'),
+    ];
     const lines = [header.join(',')];
     for (const { player, stats } of rows) {
       lines.push(
@@ -271,12 +272,12 @@ export default function AttendanceReport({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `irts-tailan-${period.id}.csv`;
+    a.download = `attendance-report-${period.id}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    toast('Тайлан татагдлаа');
+    toast(t('exported'));
   }
 
   const muted = 'text-gray-400';
@@ -285,7 +286,7 @@ export default function AttendanceReport({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="text-xs text-gray-400">
-          {teamName} · {period.title} · {rangeEvents.length} бэлтгэл
+          {teamName} · {period.title} · {t('practicesCount', { count: rangeEvents.length })}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex p-0.5 gap-0.5 rounded-lg bg-gray-100">
@@ -309,36 +310,36 @@ export default function AttendanceReport({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Тамирчин хайх"
+            placeholder={t('searchPlayer')}
             className="bg-white border border-gray-300 rounded-lg text-sm px-3 py-1.5 w-40 focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
           <button
             onClick={handleExport}
             className="text-xs font-medium px-3 py-1.5 rounded-lg border border-orange-300 text-orange-600 hover:bg-orange-50 transition"
           >
-            Тайлан татах
+            {t('exportReport')}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard
-          label="Багийн ирц"
+          label={t('teamAttendance')}
           value={`${teamStats.pct}%`}
-          hint={`${rangeEvents.length} бэлтгэлийн дундаж`}
+          hint={t('practicesAverage', { count: rangeEvents.length })}
           delta={prevTeamPct != null ? teamStats.pct - prevTeamPct : null}
         />
         <KpiCard
-          label="Анхаарах"
+          label={t('watchOut')}
           value={String(riskPlayers.length)}
-          unit="тамирчин"
-          hint={`${RISK_THRESHOLD}%-с доош эсвэл 3 дараалсан`}
+          unit={t('athletes')}
+          hint={t('watchOutHint', { threshold: RISK_THRESHOLD })}
         />
-        <KpiCard label="Хоцролт" value={String(teamStats.late)} unit="тохиолдол" hint="Ирсэн ч хоцорсон" />
+        <KpiCard label={t('lateness')} value={String(teamStats.late)} unit={t('incidents')} hint={t('cameLateAnyway')} />
         <KpiCard
-          label="Хамгийн бага ирцтэй бэлтгэл"
+          label={t('worstPractice')}
           value={worstEvent ? `${worstEvent.pct}%` : '—'}
-          hint={worstEvent ? `${fmtDate(worstEvent.event.date)} · ${TYPE_LABEL[worstEvent.event.type] ?? worstEvent.event.type}` : ''}
+          hint={worstEvent ? `${fmtDate(worstEvent.event.date)} · ${eventTypeLabel(worstEvent.event.type)}` : ''}
         />
       </div>
 
@@ -347,8 +348,8 @@ export default function AttendanceReport({
           {rangeEvents.length > 0 && (
             <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <div className="flex items-baseline justify-between mb-3">
-                <div className="text-sm font-semibold text-gray-900">Бэлтгэлийн ирц</div>
-                <div className={`text-xs ${muted}`}>Багана дээр дарж бэлтгэлийг тодруулна</div>
+                <div className="text-sm font-semibold text-gray-900">{t('practiceAttendance')}</div>
+                <div className={`text-xs ${muted}`}>{t('clickColumnHint')}</div>
               </div>
               <div className="flex items-end gap-1 h-24 overflow-hidden">
                 {eventStats.map((s) => {
@@ -357,7 +358,7 @@ export default function AttendanceReport({
                     <button
                       key={s.event.id}
                       onClick={() => setHighlightedEventId(active ? null : s.event.id)}
-                      title={`${fmtDate(s.event.date)} · ${TYPE_LABEL[s.event.type] ?? s.event.type} · ${s.n}/${players.length}`}
+                      title={`${fmtDate(s.event.date)} · ${eventTypeLabel(s.event.type)} · ${s.n}/${players.length}`}
                       className={`flex-1 min-w-0 flex flex-col justify-end items-center gap-1 h-full rounded-t-md ${
                         active ? 'bg-orange-50' : ''
                       }`}
@@ -379,43 +380,43 @@ export default function AttendanceReport({
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between gap-4 flex-wrap px-4 py-3">
               <div>
-                <div className="text-sm font-semibold text-gray-900">Тамирчид × бэлтгэл</div>
-                <div className={`text-xs mt-0.5 ${muted}`}>{rows.length} тамирчин · мөр дээр дарж дэлгэрэнгүйг харна</div>
+                <div className="text-sm font-semibold text-gray-900">{t('athletesXPractices')}</div>
+                <div className={`text-xs mt-0.5 ${muted}`}>{t('shownAndClickHint', { count: rows.length })}</div>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
-                  <Legend color="bg-orange-500" label="Ирсэн" />
-                  <Legend color="bg-orange-100 ring-1 ring-inset ring-orange-500" label="Хоцорсон" />
-                  <Legend color="bg-gray-200" label="Чөлөөтэй" />
-                  <Legend color="bg-transparent ring-1 ring-inset ring-gray-300" label="Тасалсан" />
-                  <Legend color="bg-gray-50 ring-1 ring-inset ring-gray-100" label="Тэмдэглээгүй" />
+                  <Legend color="bg-orange-500" label={t('present')} />
+                  <Legend color="bg-orange-100 ring-1 ring-inset ring-orange-500" label={t('late')} />
+                  <Legend color="bg-gray-200" label={t('excused')} />
+                  <Legend color="bg-transparent ring-1 ring-inset ring-gray-300" label={t('absent')} />
+                  <Legend color="bg-gray-50 ring-1 ring-inset ring-gray-100" label={t('noAttendanceData')} />
                 </div>
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value as Sort)}
                   className="bg-gray-50 border border-gray-200 rounded-lg text-xs px-2 py-1.5 focus:outline-none"
                 >
-                  <option value="risk">Эрсдэлээр</option>
-                  <option value="pct">Ирцийн хувиар</option>
-                  <option value="name">Нэрээр</option>
+                  <option value="risk">{t('sortByRisk')}</option>
+                  <option value="pct">{t('sortByPct')}</option>
+                  <option value="name">{t('sortByName')}</option>
                 </select>
               </div>
             </div>
 
             {rangeEvents.length === 0 || rows.length === 0 ? (
-              <p className={`text-sm text-center py-8 ${muted}`}>Өгөгдөл алга</p>
+              <p className={`text-sm text-center py-8 ${muted}`}>{t('noData')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <div className="min-w-full inline-block">
                   <div className="flex items-end gap-0 px-4 pb-2 border-b border-gray-100">
                     <div className="w-40 flex-shrink-0 text-[10px] uppercase tracking-wide text-gray-400 sticky left-0 bg-white">
-                      Тамирчин
+                      {t('athleteColumn')}
                     </div>
                     <div className="flex gap-1">
                       {rangeEvents.map((e) => (
                         <div
                           key={e.id}
-                          title={`${fmtDate(e.date)} · ${TYPE_LABEL[e.type] ?? e.type}`}
+                          title={`${fmtDate(e.date)} · ${eventTypeLabel(e.type)}`}
                           className={`w-6 text-center text-[9px] ${
                             highlightedEventId === e.id ? 'text-orange-600' : 'text-gray-400'
                           }`}
@@ -425,7 +426,7 @@ export default function AttendanceReport({
                       ))}
                     </div>
                     <div className="w-32 flex-shrink-0 text-right text-[10px] uppercase tracking-wide text-gray-400">
-                      Ирц
+                      {t('irtsColumn')}
                     </div>
                   </div>
 
@@ -448,7 +449,7 @@ export default function AttendanceReport({
                           <div className="min-w-0 text-left">
                             <div className="text-xs text-gray-900 truncate">{player.name}</div>
                             {stats.streak >= 3 && (
-                              <div className="text-[10px] text-gray-400 truncate">{stats.streak} дараалан</div>
+                              <div className="text-[10px] text-gray-400 truncate">{t('inARow', { count: stats.streak })}</div>
                             )}
                           </div>
                         </div>
@@ -458,7 +459,7 @@ export default function AttendanceReport({
                             return (
                               <div
                                 key={j}
-                                title={`${fmtDate(c.event.date)} · ${c.status ? STATUS_TITLE[c.status] : 'Тэмдэглээгүй'}`}
+                                title={`${fmtDate(c.event.date)} · ${c.status ? statusTitle(c.status) : t('noAttendanceData')}`}
                                 className={`w-6 h-5 rounded ${cellClass(c.status)} ${dimmed ? 'opacity-30' : ''}`}
                               />
                             );
@@ -499,18 +500,18 @@ export default function AttendanceReport({
                   <div className="text-sm font-semibold text-gray-900">{selected.player.name}</div>
                   <div className="text-[11px] text-gray-400 mt-0.5">
                     {selected.stats.marked === 0
-                      ? 'Тэмдэглэсэн ирц алга'
+                      ? t('noAttendanceData')
                       : selected.stats.streak >= 2
-                        ? `${selected.stats.streak} бэлтгэл дараалан тасалсан`
+                        ? t('streakAbsent', { count: selected.stats.streak })
                         : selected.stats.pct < RISK_THRESHOLD
-                          ? `${selected.stats.absent} бэлтгэл тасалсан · босгоос доош`
-                          : 'Ирц тогтвортой'}
+                          ? t('belowThreshold', { count: selected.stats.absent })
+                          : t('stable')}
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedId(null)}
                   className="text-gray-400 hover:text-gray-600 text-sm px-1"
-                  aria-label="Хаах"
+                  aria-label={tCommon('close')}
                 >
                   ✕
                 </button>
@@ -522,17 +523,21 @@ export default function AttendanceReport({
                   </div>
                   {selected.prevStats.marked > 0 && (
                     <div className={`text-[11px] ${selected.stats.pct - selected.prevStats.pct >= 0 ? 'text-orange-600' : 'text-gray-400'}`}>
-                      {selected.stats.pct - selected.prevStats.pct >= 0 ? '▲ +' : '▼ '}
-                      {selected.stats.pct - selected.prevStats.pct}% өмнөх хугацаанаас
+                      {selected.stats.pct - selected.prevStats.pct >= 0 ? '▲ ' : '▼ '}
+                      {t('vsPrevPeriod', {
+                        delta:
+                          (selected.stats.pct - selected.prevStats.pct >= 0 ? '+' : '') +
+                          (selected.stats.pct - selected.prevStats.pct),
+                      })}
                     </div>
                   )}
                 </div>
                 <div className="grid grid-cols-4 gap-2 mt-3">
                   {[
-                    { n: selected.stats.present, label: 'Ирсэн' },
-                    { n: selected.stats.late, label: 'Хоцорсон' },
-                    { n: selected.stats.excused, label: 'Чөлөө' },
-                    { n: selected.stats.absent, label: 'Тасалсан' },
+                    { n: selected.stats.present, label: t('present') },
+                    { n: selected.stats.late, label: t('late') },
+                    { n: selected.stats.excused, label: t('excused') },
+                    { n: selected.stats.absent, label: t('absent') },
                   ].map((b) => (
                     <div key={b.label} className="rounded-lg bg-gray-50 border border-gray-100 px-2 py-2">
                       <div className="text-sm font-semibold text-gray-900">{b.n}</div>
@@ -541,7 +546,7 @@ export default function AttendanceReport({
                   ))}
                 </div>
                 <div className="text-[10px] uppercase tracking-wide text-gray-400 mt-4 mb-2">
-                  Сүүлийн 10 бэлтгэл
+                  {t('last10Practices')}
                 </div>
                 <div className="flex flex-col gap-1">
                   {selected.stats.cells
@@ -551,14 +556,14 @@ export default function AttendanceReport({
                       <div key={i} className="flex items-center gap-2 text-[11px]">
                         <div className={`w-2 h-2 rounded-sm ${cellClass(c.status)}`} />
                         <div className="text-gray-500 w-11">{fmtDate(c.event.date)}</div>
-                        <div className="flex-1 text-gray-500 truncate">{TYPE_LABEL[c.event.type] ?? c.event.type}</div>
+                        <div className="flex-1 text-gray-500 truncate">{eventTypeLabel(c.event.type)}</div>
                         <div className={c.status === 'absent' ? 'text-orange-600' : 'text-gray-500'}>
-                          {c.status ? STATUS_TITLE[c.status] : 'Тэмдэглээгүй'}
+                          {c.status ? statusTitle(c.status) : t('noAttendanceData')}
                         </div>
                       </div>
                     ))}
                   {selected.stats.cells.length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-2">Бэлтгэл алга</p>
+                    <p className="text-xs text-gray-400 text-center py-2">{t('noPractices')}</p>
                   )}
                 </div>
               </div>
@@ -567,7 +572,7 @@ export default function AttendanceReport({
 
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3">
-              <div className="text-sm font-semibold text-gray-900">Анхаарах тамирчид</div>
+              <div className="text-sm font-semibold text-gray-900">{t('watchOutAthletes')}</div>
               <div className="text-xs text-orange-600">{riskPlayers.length}</div>
             </div>
             {riskPlayers.slice(0, 5).map(({ player, stats }) => (
@@ -580,7 +585,7 @@ export default function AttendanceReport({
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-gray-900 truncate">{player.name}</div>
                   <div className="text-[10px] text-gray-400 truncate">
-                    {stats.streak >= 3 ? `${stats.streak} бэлтгэл дараалан тасалсан` : `${stats.absent} бэлтгэл тасалсан`}
+                    {stats.streak >= 3 ? t('streakAbsent', { count: stats.streak }) : t('belowThreshold', { count: stats.absent })}
                   </div>
                 </div>
                 <div className="text-xs tabular-nums text-orange-600">{stats.pct}%</div>
@@ -588,13 +593,13 @@ export default function AttendanceReport({
             ))}
             {riskPlayers.length === 0 && (
               <p className="px-4 py-4 text-xs text-gray-400 border-t border-gray-100">
-                Эрсдэлтэй тамирчин байхгүй — бүх тамирчин {RISK_THRESHOLD}%-с дээш ирцтэй.
+                {t('noRiskAthletes', { threshold: RISK_THRESHOLD })}
               </p>
             )}
           </section>
 
           <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <div className="text-sm font-semibold text-gray-900 mb-2.5">Бэлтгэл тус бүр</div>
+            <div className="text-sm font-semibold text-gray-900 mb-2.5">{t('perPractice')}</div>
             {eventStats
               .slice(-5)
               .reverse()
@@ -609,7 +614,7 @@ export default function AttendanceReport({
                   </div>
                 </div>
               ))}
-            {eventStats.length === 0 && <p className="text-xs text-gray-400 text-center py-2">Бэлтгэл алга</p>}
+            {eventStats.length === 0 && <p className="text-xs text-gray-400 text-center py-2">{t('noPractices')}</p>}
           </section>
         </aside>
       </div>

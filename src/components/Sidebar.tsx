@@ -4,8 +4,10 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { logout } from '@/app/login/actions';
 import TeamSwitcher from '@/components/TeamSwitcher';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { IconLogout } from '@/components/icons';
 import type { MyTeam } from '@/lib/auth';
 import type { ReactNode } from 'react';
@@ -15,15 +17,6 @@ export interface NavItem {
   label: string;
   icon: ReactNode;
 }
-
-const ROLE_LABEL: Record<string, string> = {
-  superadmin: 'Ерөнхий админ',
-  manager: 'Менежер',
-  owner: 'Эзэн',
-  coach: 'Дасгалжуулагч',
-  player: 'Тоглогч',
-  user: 'Хэрэглэгч',
-};
 
 const ROLE_BADGE: Record<string, string> = {
   superadmin: 'bg-red-100 text-red-700',
@@ -47,10 +40,11 @@ export default function Sidebar({
   currentTeamId: number | null;
   navItems: NavItem[];
 }) {
+  const t = useTranslations();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const initial = userName.slice(0, 1).toUpperCase();
-  const currentTeam = myTeams.find((t) => t.id === currentTeamId) ?? null;
+  const currentTeam = myTeams.find((team) => team.id === currentTeamId) ?? null;
 
   return (
     <>
@@ -96,16 +90,21 @@ export default function Sidebar({
                     ROLE_BADGE[primaryRole] ?? 'bg-gray-100 text-gray-700'
                   }`}
                 >
-                  {ROLE_LABEL[primaryRole] ?? primaryRole}
+                  {t(`roles.${primaryRole}`)}
                 </span>
               </div>
             </div>
           </div>
 
+          <div className="px-5 py-3 border-b border-slate-700 flex items-center justify-between">
+            <span className="text-slate-500 text-xs uppercase tracking-wide">{t('sidebar.language')}</span>
+            <LanguageSwitcher dark />
+          </div>
+
           {primaryRole !== 'player' && myTeams.length > 1 && (
             <div className="px-3 py-3 border-b border-slate-700">
               <p className="text-slate-500 text-xs uppercase tracking-wide mb-1.5 px-2">
-                Баг сонгох
+                {t('sidebar.chooseTeam')}
               </p>
               <TeamSwitcher teams={myTeams} currentTeamId={currentTeamId} dark />
               {currentTeam && (
@@ -116,7 +115,7 @@ export default function Sidebar({
           {primaryRole !== 'player' && myTeams.length === 1 && (
             <div className="px-5 py-2 border-b border-slate-700">
               <p className="text-slate-400 text-xs">
-                Баг: <span className="text-orange-400">{myTeams[0].name}</span>
+                {t('sidebar.team')}: <span className="text-orange-400">{myTeams[0].name}</span>
               </p>
             </div>
           )}
@@ -149,7 +148,7 @@ export default function Sidebar({
                 className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
               >
                 <IconLogout className="w-[18px] h-[18px]" />
-                Гарах
+                {t('common.logout')}
               </button>
             </form>
           </div>

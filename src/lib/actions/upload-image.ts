@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getTranslations } from 'next-intl/server';
 
 const ALLOWED_IMAGE_TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -19,9 +20,10 @@ export async function uploadImageIfProvided(
   const file = formData.get(fieldName);
   if (!(file instanceof File) || file.size === 0) return {};
 
+  const t = await getTranslations('common');
   const ext = ALLOWED_IMAGE_TYPES[file.type];
-  if (!ext) return { error: 'Зөвхөн зураг файл (jpg, png, gif, webp) оруулна уу' };
-  if (file.size > MAX_IMAGE_SIZE) return { error: 'Зургийн хэмжээ 5MB-с ихгүй байх ёстой' };
+  if (!ext) return { error: t('imageTypeInvalid') };
+  if (file.size > MAX_IMAGE_SIZE) return { error: t('imageTooLarge') };
 
   const path = `${pathPrefix}-${Date.now()}.${ext}`;
   const { error: uploadError } = await admin.storage

@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 import { toast } from '@/components/Toast';
 import { createClub, updateClub, type ClubWithCounts } from '@/lib/actions/clubs';
@@ -14,6 +15,8 @@ export default function ClubFormModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations('clubs');
+  const tCommon = useTranslations('common');
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(formData: FormData) {
@@ -22,17 +25,17 @@ export default function ClubFormModal({
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast(club ? 'Клуб шинэчлэгдлээ' : 'Клуб үүслээ');
+        toast(club ? t('updated') : t('created'));
         onSaved();
       }
     });
   }
 
   return (
-    <Modal open onClose={onClose} title={club ? 'Клуб засах' : 'Клуб нэмэх'}>
+    <Modal open onClose={onClose} title={club ? t('editTitle') : t('createTitle')}>
       <form action={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Нэр</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
           <input
             name="name"
             type="text"
@@ -42,7 +45,7 @@ export default function ClubFormModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Тайлбар</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
           <textarea
             name="description"
             rows={3}
@@ -55,7 +58,7 @@ export default function ClubFormModal({
           disabled={pending}
           className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-medium rounded-lg py-2 text-sm transition"
         >
-          {pending ? 'Хадгалж байна...' : 'Хадгалах'}
+          {pending ? tCommon('saving') : tCommon('save')}
         </button>
       </form>
     </Modal>

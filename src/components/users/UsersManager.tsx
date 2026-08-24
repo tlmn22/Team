@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { toast } from '@/components/Toast';
 import { deleteUser, type UserRow } from '@/lib/actions/users';
 import UserFormModal from './UserFormModal';
@@ -11,9 +12,11 @@ const ROLE_BADGE: Record<string, string> = {
   superadmin: 'bg-red-100 text-red-700',
   user: 'bg-gray-100 text-gray-700',
 };
-const ROLE_LABEL: Record<string, string> = { superadmin: 'Ерөнхий админ', user: 'Хэрэглэгч' };
 
 export default function UsersManager({ users }: { users: UserRow[] }) {
+  const t = useTranslations('users');
+  const tRoles = useTranslations('roles');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'superadmin' | 'user'>('all');
@@ -39,13 +42,13 @@ export default function UsersManager({ users }: { users: UserRow[] }) {
   }
 
   function handleDelete(user: UserRow) {
-    if (!confirm(`"${user.name}"-г устгах уу?`)) return;
+    if (!confirm(t('confirmDelete', { name: user.name }))) return;
     startTransition(async () => {
       const res = await deleteUser(user.id);
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast('Хэрэглэгч устгагдлаа');
+        toast(t('deleted'));
         refresh();
       }
     });
@@ -54,19 +57,19 @@ export default function UsersManager({ users }: { users: UserRow[] }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Хэрэглэгчид</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <button
           onClick={() => setFormTarget('new')}
           className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
         >
-          + Хэрэглэгч нэмэх
+          {t('add')}
         </button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
-          placeholder="Нэр, и-мэйл, утасаар хайх..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -76,15 +79,15 @@ export default function UsersManager({ users }: { users: UserRow[] }) {
           onChange={(e) => setRoleFilter(e.target.value as 'all' | 'superadmin' | 'user')}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
         >
-          <option value="all">Бүх эрх</option>
-          <option value="superadmin">Ерөнхий админ</option>
-          <option value="user">Хэрэглэгч</option>
+          <option value="all">{t('allRoles')}</option>
+          <option value="superadmin">{tRoles('superadmin')}</option>
+          <option value="user">{tRoles('user')}</option>
         </select>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {filtered.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-12">Хэрэглэгч олдсонгүй</p>
+          <p className="text-gray-400 text-sm text-center py-12">{t('notFound')}</p>
         ) : (
           <div className="divide-y divide-gray-100">
             {filtered.map((u) => (
@@ -98,7 +101,7 @@ export default function UsersManager({ users }: { users: UserRow[] }) {
                       <p className="text-sm font-medium text-gray-900 truncate">{u.name}</p>
                       {!u.hasLogin && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 flex-shrink-0">
-                          Login эрхгүй
+                          {t('noLogin')}
                         </span>
                       )}
                     </div>
@@ -111,28 +114,28 @@ export default function UsersManager({ users }: { users: UserRow[] }) {
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <span className={`text-xs px-2 py-0.5 rounded-full ${ROLE_BADGE[u.system_role]}`}>
-                    {ROLE_LABEL[u.system_role]}
+                    {tRoles(u.system_role)}
                   </span>
                   {!u.hasLogin && (
                     <button
                       onClick={() => setGrantTarget(u)}
                       className="text-xs text-orange-600 hover:text-orange-700 font-medium"
                     >
-                      Login олгох
+                      {t('grantLogin')}
                     </button>
                   )}
                   <button
                     onClick={() => setFormTarget(u)}
                     className="text-xs text-gray-500 hover:text-orange-600"
                   >
-                    Засах
+                    {tCommon('edit')}
                   </button>
                   <button
                     onClick={() => handleDelete(u)}
                     disabled={pending}
                     className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50"
                   >
-                    Устгах
+                    {tCommon('delete')}
                   </button>
                 </div>
               </div>

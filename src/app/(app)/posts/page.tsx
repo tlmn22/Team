@@ -1,14 +1,9 @@
+import { getTranslations } from 'next-intl/server';
 import { requireUser, getCurrentTeamId, getMyTeams } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getLocale } from '@/i18n/locale';
 import NoTeamSelected from '@/components/NoTeamSelected';
 import { IconPosts } from '@/components/icons';
-
-const TYPE_LABEL: Record<string, string> = {
-  news: 'Мэдээ',
-  video: 'Видео',
-  file: 'Файл',
-  scout: 'Скаут',
-};
 
 export default async function PostsPage() {
   await requireUser();
@@ -19,6 +14,12 @@ export default async function PostsPage() {
     return <NoTeamSelected teams={teams} />;
   }
 
+  const [t, tType, locale] = await Promise.all([
+    getTranslations('posts'),
+    getTranslations('posts.type'),
+    getLocale(),
+  ]);
+
   const admin = createAdminClient();
   const { data: posts } = await admin
     .from('posts')
@@ -28,11 +29,11 @@ export default async function PostsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Мэдээ</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
 
       {(posts ?? []).length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <p className="text-gray-400 text-sm text-center py-8">Пост алга</p>
+          <p className="text-gray-400 text-sm text-center py-8">{t('empty')}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -46,7 +47,7 @@ export default async function PostsPage() {
                   <div className="flex items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-gray-900 truncate">{p.title}</h2>
                     <span className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full flex-shrink-0">
-                      {TYPE_LABEL[p.type] ?? p.type}
+                      {tType.has(p.type) ? tType(p.type) : p.type}
                     </span>
                   </div>
                   {p.content && (
@@ -59,7 +60,7 @@ export default async function PostsPage() {
                       rel="noreferrer"
                       className="text-sm text-orange-600 hover:underline mt-1 inline-block"
                     >
-                      Видео үзэх ↗
+                      {t('watchVideo')}
                     </a>
                   )}
                   {p.file_url && (
@@ -69,11 +70,11 @@ export default async function PostsPage() {
                       rel="noreferrer"
                       className="text-sm text-orange-600 hover:underline mt-1 inline-block"
                     >
-                      {p.file_name ?? 'Файл татах'} ↗
+                      {p.file_name ?? t('downloadFile')} ↗
                     </a>
                   )}
                   <div className="text-xs text-gray-400 mt-2">
-                    {new Date(p.created_at).toLocaleDateString('mn-MN')}
+                    {new Date(p.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'mn-MN')}
                   </div>
                 </div>
               </div>

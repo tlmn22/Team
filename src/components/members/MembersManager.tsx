@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { toast } from '@/components/Toast';
 import { removeMember, type TeamMember } from '@/lib/actions/members';
 import MemberFormModal from './MemberFormModal';
@@ -15,6 +16,7 @@ export default function MembersManager({
   members: TeamMember[];
   canManage: boolean;
 }) {
+  const t = useTranslations('members');
   const router = useRouter();
   const [formTarget, setFormTarget] = useState<TeamMember | 'new' | null>(null);
   const [pending, startTransition] = useTransition();
@@ -24,13 +26,13 @@ export default function MembersManager({
   }
 
   function handleRemove(member: TeamMember) {
-    if (!confirm(`"${member.name}"-г багаас хасах уу?`)) return;
+    if (!confirm(t('confirmRemove', { name: member.name }))) return;
     startTransition(async () => {
       const res = await removeMember(teamId, member.userId);
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast('Гишүүн хасагдлаа');
+        toast(t('removed'));
         refresh();
       }
     });
@@ -42,19 +44,19 @@ export default function MembersManager({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Гишүүд</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {canManage && (
           <button
             onClick={() => setFormTarget('new')}
             className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
           >
-            + Гишүүн нэмэх
+            {t('add')}
           </button>
         )}
       </div>
 
       <MemberSection
-        title="Дасгалжуулагч"
+        title={t('coachesTitle')}
         members={coaches}
         canManage={canManage}
         pending={pending}
@@ -62,7 +64,7 @@ export default function MembersManager({
         onRemove={handleRemove}
       />
       <MemberSection
-        title="Тоглогчид"
+        title={t('playersTitle')}
         members={players}
         canManage={canManage}
         pending={pending}
@@ -100,11 +102,13 @@ function MemberSection({
   onEdit: (m: TeamMember) => void;
   onRemove: (m: TeamMember) => void;
 }) {
+  const t = useTranslations('members');
+  const tCommon = useTranslations('common');
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
       <h2 className="font-semibold text-gray-900 mb-3">{title}</h2>
       {members.length === 0 ? (
-        <p className="text-gray-400 text-sm text-center py-6">Гишүүн алга</p>
+        <p className="text-gray-400 text-sm text-center py-6">{t('empty')}</p>
       ) : (
         <div className="space-y-1">
           {members.map((m) => (
@@ -142,14 +146,14 @@ function MemberSection({
                       onClick={() => onEdit(m)}
                       className="text-xs text-gray-500 hover:text-orange-600"
                     >
-                      Засах
+                      {tCommon('edit')}
                     </button>
                     <button
                       onClick={() => onRemove(m)}
                       disabled={pending}
                       className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50"
                     >
-                      Хасах
+                      {tCommon('remove')}
                     </button>
                   </>
                 )}

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
 import './globals.css';
 import ToastHost from '@/components/Toast';
+import { getLocale } from '@/i18n/locale';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -14,15 +16,18 @@ export const metadata: Metadata = {
   description: 'Data. Analyze. Elevate. — Багийн менежментийн систем',
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  const locale = await getLocale();
   return (
-    <html lang="mn" className={`${inter.variable} h-full`}>
+    <html lang={locale} className={`${inter.variable} h-full`}>
       <head>
         <meta name="theme-color" content="#f97316" />
       </head>
       <body className="h-full bg-gray-50 text-gray-900 font-sans antialiased">
-        {children}
-        <ToastHost />
+        <NextIntlClientProvider>
+          {children}
+          <ToastHost />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

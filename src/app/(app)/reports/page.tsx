@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { requireUser, getCurrentTeamId, getMyTeams } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import NoTeamSelected from '@/components/NoTeamSelected';
@@ -77,9 +78,11 @@ export default async function ReportsPage() {
     byType,
   };
 
+  const t = await getTranslations('reports');
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Тайлан</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
       <ReportsTabs
         teamName={team?.name ?? ''}
         reportPlayers={reportPlayers}

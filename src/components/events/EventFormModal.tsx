@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import Modal from '@/components/Modal';
 import { toast } from '@/components/Toast';
 import { createEvent, updateEvent } from '@/lib/actions/events';
@@ -15,12 +16,7 @@ export interface EventFormValues {
   description: string | null;
 }
 
-const TYPE_OPTIONS = [
-  { value: 'practice', label: 'Бэлтгэл' },
-  { value: 'meeting', label: 'Уулзалт' },
-  { value: 'game', label: 'Тоглолт' },
-  { value: 'other', label: 'Бусад' },
-];
+const TYPE_VALUES = ['practice', 'meeting', 'game', 'other'];
 
 export default function EventFormModal({
   teamId,
@@ -35,6 +31,9 @@ export default function EventFormModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations('events');
+  const tEventTypes = useTranslations('eventTypes');
+  const tCommon = useTranslations('common');
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(formData: FormData) {
@@ -45,17 +44,17 @@ export default function EventFormModal({
       if (res.error) {
         toast(res.error, 'error');
       } else {
-        toast(event ? 'Эвент шинэчлэгдлээ' : 'Эвент нэмэгдлээ');
+        toast(event ? t('updated') : t('created'));
         onSaved();
       }
     });
   }
 
   return (
-    <Modal open onClose={onClose} title={event ? 'Эвент засах' : 'Эвент нэмэх'}>
+    <Modal open onClose={onClose} title={event ? t('editTitle') : t('createTitle')}>
       <form action={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Гарчиг</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('eventTitle')}</label>
           <input
             name="title"
             type="text"
@@ -65,22 +64,22 @@ export default function EventFormModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Төрөл</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('type')}</label>
           <select
             name="type"
             defaultValue={event?.type ?? 'practice'}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
           >
-            {TYPE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
+            {TYPE_VALUES.map((v) => (
+              <option key={v} value={v}>
+                {tEventTypes(v)}
               </option>
             ))}
           </select>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Огноо</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('date')}</label>
             <input
               name="date"
               type="date"
@@ -90,7 +89,9 @@ export default function EventFormModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Цаг (сонголттой)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('time', { optional: tCommon('optional') })}
+            </label>
             <input
               name="time"
               type="time"
@@ -100,7 +101,9 @@ export default function EventFormModal({
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Байршил (сонголттой)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t('location', { optional: tCommon('optional') })}
+          </label>
           <input
             name="location"
             type="text"
@@ -109,7 +112,9 @@ export default function EventFormModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Тайлбар (сонголттой)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t('description', { optional: tCommon('optional') })}
+          </label>
           <textarea
             name="description"
             rows={3}
@@ -122,7 +127,7 @@ export default function EventFormModal({
           disabled={pending}
           className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-medium rounded-lg py-2 text-sm transition"
         >
-          {pending ? 'Хадгалж байна...' : 'Хадгалах'}
+          {pending ? tCommon('saving') : tCommon('save')}
         </button>
       </form>
     </Modal>
