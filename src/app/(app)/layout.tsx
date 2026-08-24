@@ -26,9 +26,11 @@ function navVisibility(role: string) {
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const role = await getPrimaryRole();
-  const myTeams = await getMyTeams();
-  const currentTeamId = await getCurrentTeamId();
+  const [role, myTeams, currentTeamId] = await Promise.all([
+    getPrimaryRole(),
+    getMyTeams(),
+    getCurrentTeamId(),
+  ]);
   const nav = navVisibility(role);
 
   const iconClass = 'w-[18px] h-[18px]';

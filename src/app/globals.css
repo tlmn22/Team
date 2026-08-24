@@ -5,8 +5,8 @@
 }
 
 .rich-text-editor .ck.ck-editor__editable {
-  min-height: 2.75rem;
-  max-height: 50vh;
+  min-height: 9rem;
+  max-height: 60vh;
   overflow-y: auto;
   padding: 0.5rem 0.75rem;
 }

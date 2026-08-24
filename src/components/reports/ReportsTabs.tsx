@@ -1,18 +1,31 @@
 'use client';
 
 import { useState } from 'react';
+import type { AttendanceStatus } from '@/lib/actions/attendance';
+import PlayerAttendanceModal from './PlayerAttendanceModal';
+
+export interface PlayerAttendanceDetail {
+  eventId: number;
+  title: string;
+  date: string;
+  type: string;
+  status: AttendanceStatus | null;
+}
 
 export interface AttendanceRow {
   userId: string;
   name: string;
+  photoUrl: string | null;
   role: string;
   present: number;
   total: number;
+  details: PlayerAttendanceDetail[];
 }
 
 export interface PlayerRow {
   userId: string;
   name: string;
+  photoUrl: string | null;
   role: string;
   jerseyNumber: number | null;
   position: string | null;
@@ -33,6 +46,19 @@ const TAB_LABEL: Record<Tab, string> = {
   content: 'Контент',
 };
 
+function Avatar({ name, photoUrl }: { name: string; photoUrl: string | null }) {
+  return (
+    <div className="w-10 h-10 rounded-full bg-orange-100 overflow-hidden flex items-center justify-center text-orange-600 font-bold text-sm flex-shrink-0">
+      {photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+      ) : (
+        name.slice(0, 1).toUpperCase()
+      )}
+    </div>
+  );
+}
+
 export default function ReportsTabs({
   attendance,
   players,
@@ -43,6 +69,7 @@ export default function ReportsTabs({
   content: ContentStats;
 }) {
   const [tab, setTab] = useState<Tab>('attendance');
+  const [selectedPlayer, setSelectedPlayer] = useState<AttendanceRow | null>(null);
 
   return (
     <div>
@@ -63,21 +90,28 @@ export default function ReportsTabs({
       </div>
 
       {tab === 'attendance' && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {attendance.map((a) => {
             const pct = a.total > 0 ? Math.round((a.present / a.total) * 100) : 0;
             return (
-              <div key={a.userId} className="px-1 py-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-800">{a.name}</span>
-                  <span className="text-xs text-gray-500">
-                    {a.present}/{a.total} ({pct}%)
-                  </span>
+              <button
+                key={a.userId}
+                onClick={() => setSelectedPlayer(a)}
+                className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:border-orange-200 hover:bg-orange-50/40 transition-colors text-left"
+              >
+                <Avatar name={a.name} photoUrl={a.photoUrl} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-sm font-medium text-gray-900 truncate">{a.name}</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0">
+                      {a.present}/{a.total} · {pct}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-orange-500 rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-orange-500 rounded-full" style={{ width: `${pct}%` }} />
-                </div>
-              </div>
+              </button>
             );
           })}
           {attendance.length === 0 && (
@@ -90,11 +124,14 @@ export default function ReportsTabs({
         <div className="space-y-1">
           {players.map((p) => (
             <div key={p.userId} className="flex items-center justify-between px-1 py-2">
-              <div>
-                <span className="text-sm text-gray-800">{p.name}</span>
-                <span className="text-xs text-gray-400 ml-2">
-                  {p.role === 'coach' ? 'Дасгалжуулагч' : (p.position ?? '')}
-                </span>
+              <div className="flex items-center gap-3">
+                <Avatar name={p.name} photoUrl={p.photoUrl} />
+                <div>
+                  <span className="text-sm text-gray-800">{p.name}</span>
+                  <span className="text-xs text-gray-400 ml-2">
+                    {p.role === 'coach' ? 'Дасгалжуулагч' : (p.position ?? '')}
+                  </span>
+                </div>
               </div>
               {p.jerseyNumber != null && (
                 <span className="text-xs font-semibold text-gray-500">#{p.jerseyNumber}</span>
@@ -129,6 +166,10 @@ export default function ReportsTabs({
             </div>
           </div>
         </div>
+      )}
+
+      {selectedPlayer && (
+        <PlayerAttendanceModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
       )}
     </div>
   );

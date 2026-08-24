@@ -3,11 +3,15 @@
 import { revalidatePath } from 'next/cache';
 import { requireUser, canManageTeam } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { uploadImageIfProvided } from '@/lib/actions/upload-image';
+
+const PHOTO_BUCKET = 'member-photos';
 
 export interface TeamMember {
   userId: string;
   name: string;
   phone: string | null;
+  photoUrl: string | null;
   role: 'coach' | 'player';
   jerseyNumber: number | null;
   position: string | null;
@@ -25,17 +29,18 @@ export async function listTeamMembers(teamId: number): Promise<TeamMember[]> {
   const admin = createAdminClient();
   const { data } = await admin
     .from('team_members')
-    .select('user_id, role, jersey_number, position, profiles!inner(name, phone)')
+    .select('user_id, role, jersey_number, position, profiles!inner(name, phone, photo_url)')
     .eq('team_id', teamId)
     .eq('active', true)
     .order('role');
 
   return (data ?? []).map((row) => {
-    const p = row.profiles as unknown as { name: string; phone: string | null };
+    const p = row.profiles as unknown as { name: string; phone: string | null; photo_url: string | null };
     return {
       userId: row.user_id,
       name: p.name,
       phone: p.phone,
+      photoUrl: p.photo_url,
       role: row.role as 'coach' | 'player',
       jerseyNumber: row.jersey_number,
       position: row.position,
@@ -58,7 +63,7 @@ export async function addMember(
   if (role !== 'coach' && role !== 'player') return { error: 'Буруу эрх' };
 
   const admin = createAdminClient();
-  const { error } = await admin.rpc('create_team_member', {
+  const { data: newUserId, error } = await admin.rpc('create_team_member', {
     p_team_id: teamId,
     p_name: name,
     p_phone: phone,
@@ -67,6 +72,12 @@ export async function addMember(
     p_position: role === 'player' ? position : null,
   });
   if (error) return { error: error.message };
+
+  const photo = await uploadImageIfProvided(admin, formData, 'photo', PHOTO_BUCKET, `member-${newUserId}`);
+  if (photo.error) return { error: photo.error };
+  if (photo.url) {
+    await admin.from('profiles').update({ photo_url: photo.url }).eq('id', newUserId);
+  }
 
   revalidatePath('/members');
   return {};
@@ -85,6 +96,13 @@ export async function updateMember(
   if (role !== 'coach' && role !== 'player') return { error: 'Буруу эрх' };
 
   const admin = createAdminClient();
+
+  const photo = await uploadImageIfProvided(admin, formData, 'photo', PHOTO_BUCKET, `member-${userId}`);
+  if (photo.error) return { error: photo.error };
+  if (photo.url) {
+    await admin.from('profiles').update({ photo_url: photo.url }).eq('id', userId);
+  }
+
   const { error } = await admin
     .from('team_members')
     .update({

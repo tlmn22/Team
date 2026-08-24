@@ -28,37 +28,35 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     .maybeSingle();
 
   if (!event || !(await canViewTeam(event.team_id))) notFound();
-  const canManage = await canManageTeam(event.team_id);
 
-  const { data: members } = await admin
-    .from('team_members')
-    .select('user_id, profiles!inner(id, name)')
-    .eq('team_id', event.team_id)
-    .eq('active', true);
-
-  const { data: attendance } = await admin
-    .from('event_attendance')
-    .select('user_id, status, notes')
-    .eq('event_id', eventId);
+  const [canManage, { data: members }, { data: attendance }, { data: notes }] = await Promise.all([
+    canManageTeam(event.team_id),
+    admin
+      .from('team_members')
+      .select('user_id, profiles!inner(id, name, photo_url)')
+      .eq('team_id', event.team_id)
+      .eq('active', true),
+    admin.from('event_attendance').select('user_id, status, notes').eq('event_id', eventId),
+    admin
+      .from('event_notes')
+      .select('id, content, created_at, profiles(name)')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false }),
+  ]);
 
   const attendanceMap = new Map((attendance ?? []).map((a) => [a.user_id, a]));
 
   const attendanceMembers: AttendanceMember[] = (members ?? []).map((m) => {
-    const profile = m.profiles as unknown as { id: string; name: string };
+    const profile = m.profiles as unknown as { id: string; name: string; photo_url: string | null };
     const a = attendanceMap.get(m.user_id);
     return {
       userId: m.user_id,
       name: profile.name,
+      photoUrl: profile.photo_url,
       status: (a?.status as AttendanceStatus) ?? null,
       notes: a?.notes ?? null,
     };
   });
-
-  const { data: notes } = await admin
-    .from('event_notes')
-    .select('id, content, created_at, profiles(name)')
-    .eq('event_id', eventId)
-    .order('created_at', { ascending: false });
 
   const eventNotes: EventNote[] = (notes ?? []).map((n) => {
     const author = n.profiles as unknown as { name: string } | null;

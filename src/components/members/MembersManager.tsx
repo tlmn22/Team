@@ -113,8 +113,13 @@ function MemberSection({
               className="flex items-center justify-between px-1 py-2.5 hover:bg-gray-50 rounded-lg transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm flex-shrink-0">
-                  {m.name.slice(0, 1).toUpperCase()}
+                <div className="w-9 h-9 rounded-full bg-orange-100 overflow-hidden flex items-center justify-center text-orange-600 font-bold text-sm flex-shrink-0">
+                  {m.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={m.photoUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    m.name.slice(0, 1).toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{m.name}</p>

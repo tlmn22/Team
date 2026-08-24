@@ -17,7 +17,14 @@ export default function MemberFormModal({
   onSaved: () => void;
 }) {
   const [role, setRole] = useState<'coach' | 'player'>(member?.role ?? 'player');
+  const [preview, setPreview] = useState<string | null>(member?.photoUrl ?? null);
   const [pending, startTransition] = useTransition();
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPreview(URL.createObjectURL(file));
+  }
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
@@ -36,6 +43,27 @@ export default function MemberFormModal({
   return (
     <Modal open onClose={onClose} title={member ? 'Гишүүн засах' : 'Гишүүн нэмэх'}>
       <form action={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Зураг</label>
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
+              {preview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={preview} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-gray-400 text-xs">Зураг</span>
+              )}
+            </div>
+            <input
+              name="photo"
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              onChange={handleFileChange}
+              className="text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
+            />
+          </div>
+        </div>
+
         {!member && (
           <>
             <div>

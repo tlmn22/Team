@@ -12,8 +12,7 @@ export default async function MembersPage() {
     return <NoTeamSelected teams={teams} />;
   }
 
-  const canManage = await canManageTeam(teamId);
-  const members = await listTeamMembers(teamId);
+  const [canManage, members] = await Promise.all([canManageTeam(teamId), listTeamMembers(teamId)]);
 
   return <MembersManager teamId={teamId} members={members} canManage={canManage} />;
 }

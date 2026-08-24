@@ -1,6 +1,7 @@
 import { requireUser, getCurrentTeamId, getMyTeams } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import NoTeamSelected from '@/components/NoTeamSelected';
+import type { AttendanceStatus } from '@/lib/actions/attendance';
 import ReportsTabs, {
   type AttendanceRow,
   type PlayerRow,
@@ -18,24 +19,33 @@ export default async function ReportsPage() {
 
   const admin = createAdminClient();
 
-  const { data: members } = await admin
-    .from('team_members')
-    .select('user_id, role, jersey_number, position, profiles!inner(name)')
-    .eq('team_id', teamId)
-    .eq('active', true);
-
-  const { data: events } = await admin.from('events').select('id').eq('team_id', teamId);
+  const [{ data: members }, { data: events }, { data: posts }] = await Promise.all([
+    admin
+      .from('team_members')
+      .select('user_id, role, jersey_number, position, profiles!inner(name, photo_url)')
+      .eq('team_id', teamId)
+      .eq('active', true),
+    admin.from('events').select('id, title, type, date').eq('team_id', teamId).order('date', { ascending: false }),
+    admin.from('posts').select('id, type').eq('team_id', teamId),
+  ]);
   const eventIds = (events ?? []).map((e) => e.id);
+  const postIds = (posts ?? []).map((p) => p.id);
 
-  const { data: attendanceRows } = eventIds.length
-    ? await admin.from('event_attendance').select('user_id, status').in('event_id', eventIds)
-    : { data: [] as { user_id: string; status: string }[] };
+  const [{ data: attendanceRows }, { count: totalViews }] = await Promise.all([
+    eventIds.length
+      ? admin.from('event_attendance').select('user_id, event_id, status').in('event_id', eventIds)
+      : Promise.resolve({ data: [] as { user_id: string; event_id: number; status: string }[] }),
+    postIds.length
+      ? admin.from('post_views').select('id', { count: 'exact', head: true }).in('post_id', postIds)
+      : Promise.resolve({ count: 0 }),
+  ]);
 
   const players: PlayerRow[] = (members ?? []).map((m) => {
-    const profile = m.profiles as unknown as { name: string };
+    const profile = m.profiles as unknown as { name: string; photo_url: string | null };
     return {
       userId: m.user_id,
       name: profile.name,
+      photoUrl: profile.photo_url,
       role: m.role,
       jerseyNumber: m.jersey_number,
       position: m.position,
@@ -47,17 +57,26 @@ export default async function ReportsPage() {
     .map((p) => {
       const rows = (attendanceRows ?? []).filter((a) => a.user_id === p.userId);
       const present = rows.filter((a) => a.status === 'present' || a.status === 'late').length;
-      return { userId: p.userId, name: p.name, role: p.role, present, total: rows.length };
+      const details = (events ?? []).map((e) => {
+        const row = rows.find((a) => a.event_id === e.id);
+        return {
+          eventId: e.id,
+          title: e.title,
+          date: e.date,
+          type: e.type,
+          status: (row?.status as AttendanceStatus) ?? null,
+        };
+      });
+      return {
+        userId: p.userId,
+        name: p.name,
+        photoUrl: p.photoUrl,
+        role: p.role,
+        present,
+        total: rows.length,
+        details,
+      };
     });
-
-  const { data: posts } = await admin.from('posts').select('id, type').eq('team_id', teamId);
-  const postIds = (posts ?? []).map((p) => p.id);
-  const { count: totalViews } = postIds.length
-    ? await admin
-        .from('post_views')
-        .select('id', { count: 'exact', head: true })
-        .in('post_id', postIds)
-    : { count: 0 };
 
   const byType: Record<string, number> = {};
   for (const p of posts ?? []) {

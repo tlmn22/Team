@@ -24,10 +24,12 @@ const MONTHS = ['1-р сар', '2-р сар', '3-р сар', '4-р сар', '5-�
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const role = await getPrimaryRole();
-  const myClubs = await getMyClubs();
-  const myTeams = await getMyTeams();
-  const currentTeamId = await getCurrentTeamId();
+  const [role, myClubs, myTeams, currentTeamId] = await Promise.all([
+    getPrimaryRole(),
+    getMyClubs(),
+    getMyTeams(),
+    getCurrentTeamId(),
+  ]);
 
   const teamIds = currentTeamId ? [currentTeamId] : myTeams.map((t) => t.id);
   const admin = createAdminClient();
@@ -38,33 +40,34 @@ export default async function DashboardPage() {
   let attendanceRate = 0;
 
   if (teamIds.length > 0) {
-    const { count: playerCount } = await admin
-      .from('team_members')
-      .select('id', { count: 'exact', head: true })
-      .in('team_id', teamIds)
-      .eq('role', 'player')
-      .eq('active', true);
-    totalPlayers = playerCount ?? 0;
-
     const today = new Date().toISOString().slice(0, 10);
-    const { data: events } = await admin
-      .from('events')
-      .select('id, title, type, date, time, location')
-      .in('team_id', teamIds)
-      .gte('date', today)
-      .order('date', { ascending: true })
-      .limit(5);
+    const [{ count: playerCount }, { data: events }, { data: posts }, { data: allEvents }] =
+      await Promise.all([
+        admin
+          .from('team_members')
+          .select('id', { count: 'exact', head: true })
+          .in('team_id', teamIds)
+          .eq('role', 'player')
+          .eq('active', true),
+        admin
+          .from('events')
+          .select('id, title, type, date, time, location')
+          .in('team_id', teamIds)
+          .gte('date', today)
+          .order('date', { ascending: true })
+          .limit(5),
+        admin
+          .from('posts')
+          .select('id, title, created_at')
+          .in('team_id', teamIds)
+          .order('created_at', { ascending: false })
+          .limit(4),
+        admin.from('events').select('id').in('team_id', teamIds),
+      ]);
+    totalPlayers = playerCount ?? 0;
     upcomingEvents = events ?? [];
-
-    const { data: posts } = await admin
-      .from('posts')
-      .select('id, title, created_at')
-      .in('team_id', teamIds)
-      .order('created_at', { ascending: false })
-      .limit(4);
     recentPosts = posts ?? [];
 
-    const { data: allEvents } = await admin.from('events').select('id').in('team_id', teamIds);
     const eventIds = (allEvents ?? []).map((e) => e.id);
     if (eventIds.length > 0) {
       const { data: attendance } = await admin

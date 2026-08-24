@@ -91,6 +91,7 @@ export const myRoleInClub = cache(async (clubId: number): Promise<ClubRole | 'ma
 /**
  * config/auth.php: myRoleInTeam() — 'coach' | 'player' | null.
  * SuperAdmin -> 'coach'. Клубын manager -> тухайн клубын бүх багт 'coach'.
+ * Клубын owner -> тухайн клубын бүх багт 'player' (зөвхөн харах, удирдах эрхгүй).
  */
 export const myRoleInTeam = cache(async (teamId: number): Promise<TeamRole | 'coach' | null> => {
   if (await isSuperAdmin()) return 'coach';
@@ -109,15 +110,16 @@ export const myRoleInTeam = cache(async (teamId: number): Promise<TeamRole | 'co
   const { data: team } = await admin.from('teams').select('club_id').eq('id', teamId).maybeSingle();
   if (!team) return null;
 
-  const { data: managed } = await admin
+  const { data: clubMember } = await admin
     .from('club_members')
     .select('role')
     .eq('club_id', team.club_id)
     .eq('user_id', user.id)
-    .eq('role', 'manager')
     .maybeSingle();
 
-  return managed ? 'coach' : null;
+  if (clubMember?.role === 'manager') return 'coach';
+  if (clubMember?.role === 'owner') return 'player';
+  return null;
 });
 
 export async function canManageClub(clubId: number): Promise<boolean> {
@@ -134,7 +136,7 @@ export async function canViewTeam(teamId: number): Promise<boolean> {
 }
 
 /** config/auth.php: getMyClubs() */
-export async function getMyClubs(): Promise<MyClub[]> {
+export const getMyClubs = cache(async (): Promise<MyClub[]> => {
   const user = await getCurrentUser();
   if (!user) return [];
   const admin = createAdminClient();
@@ -164,10 +166,10 @@ export async function getMyClubs(): Promise<MyClub[]> {
     };
     return { ...club, my_role: row.role as ClubRole };
   });
-}
+});
 
 /** config/auth.php: getMyTeams() */
-export async function getMyTeams(): Promise<MyTeam[]> {
+export const getMyTeams = cache(async (): Promise<MyTeam[]> => {
   const user = await getCurrentUser();
   if (!user) return [];
   const admin = createAdminClient();
@@ -208,9 +210,9 @@ export async function getMyTeams(): Promise<MyTeam[]> {
 
   const { data: managed } = await admin
     .from('club_members')
-    .select('club_id, clubs!inner(teams!inner(id, club_id, name, description, logo_url, active, clubs!inner(name)))')
+    .select('role, club_id, clubs!inner(teams!inner(id, club_id, name, description, logo_url, active, clubs!inner(name)))')
     .eq('user_id', user.id)
-    .eq('role', 'manager');
+    .in('role', ['manager', 'owner']);
 
   const managedTeams: MyTeam[] = [];
   for (const row of managed ?? []) {
@@ -225,19 +227,20 @@ export async function getMyTeams(): Promise<MyTeam[]> {
         clubs: { name: string };
       }[];
     };
+    const myRole = row.role === 'manager' ? 'coach' : 'player';
     for (const t of clubData.teams ?? []) {
       if (!t.active || directIds.has(t.id)) continue;
-      managedTeams.push({ ...t, club_name: t.clubs.name, my_role: 'coach' });
+      managedTeams.push({ ...t, club_name: t.clubs.name, my_role: myRole });
     }
   }
 
   return [...directTeams, ...managedTeams];
-}
+});
 
 const CTX_TEAM_COOKIE = 'ctx_team_id';
 
 /** config/auth.php: getCurrentTeamId() */
-export async function getCurrentTeamId(): Promise<number | null> {
+export const getCurrentTeamId = cache(async (): Promise<number | null> => {
   const cookieStore = await cookies();
   const fromCookie = cookieStore.get(CTX_TEAM_COOKIE)?.value;
   if (fromCookie) return Number(fromCookie);
@@ -248,7 +251,7 @@ export async function getCurrentTeamId(): Promise<number | null> {
     if (teams.length > 0) return teams[0].id;
   }
   return null;
-}
+});
 
 /** config/auth.php: setCurrentTeamId() — Server Action-с дуудна */
 export async function setCurrentTeamId(teamId: number | null): Promise<void> {
@@ -258,7 +261,7 @@ export async function setCurrentTeamId(teamId: number | null): Promise<void> {
 }
 
 /** config/auth.php: getPrimaryRole() */
-export async function getPrimaryRole(): Promise<SystemRole | ClubRole | TeamRole> {
+export const getPrimaryRole = cache(async (): Promise<SystemRole | ClubRole | TeamRole> => {
   const user = await getCurrentUser();
   if (!user) return 'user';
   if (user.system_role === 'superadmin') return 'superadmin';
@@ -281,4 +284,4 @@ export async function getPrimaryRole(): Promise<SystemRole | ClubRole | TeamRole
     .limit(1)
     .maybeSingle();
   return (tm?.role as TeamRole) ?? 'user';
-}
+});
