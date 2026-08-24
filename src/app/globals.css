@@ -8,6 +8,7 @@
   min-height: 9rem;
   max-height: 60vh;
   overflow-y: auto;
+  overflow-wrap: anywhere;
   padding: 0.5rem 0.75rem;
 }
 .rich-text-editor .ck.ck-toolbar {
@@ -19,10 +20,22 @@
   border: 0;
 }
 
+/* Жагсаалтыг Tab дараад дараалан гүнзгийрүүлэхэд (list nesting) тодорхой
+   гүнээс цааш indent нэмэгдэхгүй байхаар хязгаарлана — эс тэгвээс
+   текст шахагдаж харагдахаа болино. */
+.rich-text-editor :where(ul, ol),
+.rich-text-content :where(ul, ol) {
+  padding-left: 1.25em;
+  overflow-wrap: anywhere;
+}
+.rich-text-editor :where(ul, ol) :where(ul, ol) :where(ul, ol) :where(ul, ol) :where(ul, ol),
+.rich-text-content :where(ul, ol) :where(ul, ol) :where(ul, ol) :where(ul, ol) :where(ul, ol) {
+  padding-left: 0;
+}
+
 .rich-text-content :where(ul, ol) {
   list-style: revert;
   margin: revert;
-  padding: revert;
 }
 .rich-text-content a {
   color: var(--color-orange-600);
