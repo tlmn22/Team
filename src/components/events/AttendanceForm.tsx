@@ -28,7 +28,9 @@ function MemberCell({ name, photoUrl }: { name: string; photoUrl: string | null 
           name.slice(0, 1).toUpperCase()
         )}
       </div>
-      <span className="text-sm text-gray-800 truncate">{name}</span>
+      <span className="text-sm text-gray-800 truncate" title={name}>
+        {name}
+      </span>
     </div>
   );
 }
@@ -79,84 +81,80 @@ export default function AttendanceForm({
 
   if (!canManage) {
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="py-2 pr-3 text-xs font-medium text-gray-400">{t('member')}</th>
-              <th className="py-2 text-xs font-medium text-gray-400">{t('statusLabel')}</th>
+      <table className="w-full table-fixed text-left border-collapse">
+        <thead>
+          <tr className="border-b border-gray-100">
+            <th className="py-2 pr-3 w-1/2 text-xs font-medium text-gray-400">{t('member')}</th>
+            <th className="py-2 text-xs font-medium text-gray-400">{t('statusLabel')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {members.map((m) => (
+            <tr key={m.userId} className="border-b border-gray-50 last:border-0">
+              <td className="py-2 pr-3 overflow-hidden">
+                <MemberCell name={m.name} photoUrl={m.photoUrl} />
+              </td>
+              <td className="py-2">
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    m.status ? STATUS_COLOR[m.status] : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {m.status ? tStatus(m.status) : t('notMarked')}
+                </span>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {members.map((m) => (
-              <tr key={m.userId} className="border-b border-gray-50 last:border-0">
-                <td className="py-2 pr-3">
-                  <MemberCell name={m.name} photoUrl={m.photoUrl} />
-                </td>
-                <td className="py-2">
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      m.status ? STATUS_COLOR[m.status] : 'bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    {m.status ? tStatus(m.status) : t('notMarked')}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     );
   }
 
   return (
     <div className="space-y-3">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="py-2 pr-3 text-xs font-medium text-gray-400">{t('member')}</th>
-              <th className="py-2 pr-3 text-xs font-medium text-gray-400">{t('statusLabel')}</th>
-              <th className="py-2 text-xs font-medium text-gray-400">{t('notesTitle')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m) => {
-              const row = rows.find((r) => r.userId === m.userId)!;
-              return (
-                <tr key={m.userId} className="border-b border-gray-50 last:border-0">
-                  <td className="py-2 pr-3 min-w-[140px]">
-                    <MemberCell name={m.name} photoUrl={m.photoUrl} />
-                  </td>
-                  <td className="py-2 pr-3">
-                    <select
-                      value={row.status}
-                      onChange={(e) => setRow(m.userId, { status: e.target.value as AttendanceStatus })}
-                      className="text-xs rounded-lg border border-gray-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {tStatus(s)}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-2">
-                    <input
-                      type="text"
-                      value={row.notes}
-                      onChange={(e) => setRow(m.userId, { notes: e.target.value })}
-                      placeholder={t('notesTitle')}
-                      className="text-xs rounded-lg border border-gray-300 px-2 py-1.5 w-full min-w-[360px] focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <table className="w-full table-fixed text-left border-collapse">
+        <thead>
+          <tr className="border-b border-gray-100">
+            <th className="py-2 pr-2 w-[38%] text-xs font-medium text-gray-400">{t('member')}</th>
+            <th className="py-2 pr-2 w-[30%] text-xs font-medium text-gray-400">{t('statusLabel')}</th>
+            <th className="py-2 w-[32%] text-xs font-medium text-gray-400">{t('notesTitle')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {members.map((m) => {
+            const row = rows.find((r) => r.userId === m.userId)!;
+            return (
+              <tr key={m.userId} className="border-b border-gray-50 last:border-0">
+                <td className="py-2 pr-2 overflow-hidden">
+                  <MemberCell name={m.name} photoUrl={m.photoUrl} />
+                </td>
+                <td className="py-2 pr-2">
+                  <select
+                    value={row.status}
+                    onChange={(e) => setRow(m.userId, { status: e.target.value as AttendanceStatus })}
+                    className="text-xs rounded-lg border border-gray-300 px-1.5 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {tStatus(s)}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="py-2">
+                  <input
+                    type="text"
+                    value={row.notes}
+                    onChange={(e) => setRow(m.userId, { notes: e.target.value })}
+                    placeholder={t('notesTitle')}
+                    className="text-xs rounded-lg border border-gray-300 px-2 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
       <button
         onClick={handleSave}
         disabled={pending}

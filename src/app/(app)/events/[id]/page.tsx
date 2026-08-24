@@ -78,24 +78,26 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         {event.description && <p className="text-sm text-gray-600 mt-3">{event.description}</p>}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-3">{t('attendanceTitle')}</h2>
-        <AttendanceForm
-          eventId={event.id}
-          teamId={event.team_id}
-          members={attendanceMembers}
-          canManage={canManage}
-        />
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 min-w-0">
+          <h2 className="font-semibold text-gray-900 mb-3">{t('notesTitle')}</h2>
+          <EventNotesForm
+            eventId={event.id}
+            teamId={event.team_id}
+            notes={eventNotes}
+            canManage={canManage}
+          />
+        </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-3">{t('notesTitle')}</h2>
-        <EventNotesForm
-          eventId={event.id}
-          teamId={event.team_id}
-          notes={eventNotes}
-          canManage={canManage}
-        />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 min-w-0">
+          <h2 className="font-semibold text-gray-900 mb-3">{t('attendanceTitle')}</h2>
+          <AttendanceForm
+            eventId={event.id}
+            teamId={event.team_id}
+            members={attendanceMembers}
+            canManage={canManage}
+          />
+        </div>
       </div>
     </div>
   );
